@@ -35,7 +35,7 @@ class StarPlot(VisWidget):
     Radial star plot with multiple axes.
     """
 
-    pointPosChanged = pyqtSignal()
+    axisChanged  = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -63,6 +63,7 @@ class StarPlot(VisWidget):
         self.setDragMode(QGraphicsView.RubberBandDrag)
 
         self.rubberBandChanged.connect(self.selectData)
+        self.setCacheMode(QGraphicsView.CacheBackground)
 
     def updateWidget(self):
         for a in self.axes:
@@ -97,7 +98,7 @@ class StarPlot(VisWidget):
             points = []
             lines = []
             for i in range(numDims):
-                p = self.PlotPoint(ds[i], ds[-1])
+                p = self.PlotPoint(self, ds[i], ds[-1])
                 p.setParentItem(self.axes[i])
                 points.append(p)
 
@@ -110,12 +111,15 @@ class StarPlot(VisWidget):
             self.lineGroups.append(group)
 
     def resizeEvent(self, event):
+        self.setUpdatesEnabled(False)
         # center scene in viewport
         r = self.rect()
         t = QTransform()
         t.translate(-r.width() / 2, -r.height() / 2)
         r = QRectF(QPointF(r.x(), r.y()) * t, QSizeF(r.width(), r.height()))
         self.setSceneRect(r)
+        self.axisChanged.emit()
+        self.setUpdatesEnabled(True)
 
     def selectData(self, rubberBandRect, fromScenePoint, toScenePoint):
         if fromScenePoint == toScenePoint:
@@ -134,9 +138,8 @@ class StarPlot(VisWidget):
                     sib.highlighted = True
                     self.highlightedItems.append(sib)
 
-    def paintEvent(self, event):
-        super().paintEvent(event)
-        self.pointPosChanged.emit()
+    #def paintEvent(self, event):
+    #    super().paintEvent(event)
 
     def sizeHint(self):
         return QSize(1000, 1000)
@@ -150,8 +153,8 @@ class StarPlot(VisWidget):
             self.view = view
 
             self.padding = 30
-            self.canvasW = view.rect().size().width() - self.padding
-            self.canvasH = view.rect().size().height() - self.padding
+            self.__canvasW = view.rect().size().width() - self.padding
+            self.__canvasH = view.rect().size().height() - self.padding
 
             self.axesColor = QColor(150, 150, 150)
             self.axesWidth = 1
@@ -160,6 +163,11 @@ class StarPlot(VisWidget):
             self.axesPen = QPen(self.axesColor, self.axesWidth)
 
             self.setAcceptHoverEvents(True)
+
+            self.__canvasMaxDim = 0
+            self.__boundingRect = None
+
+            self.view.axisChanged.connect(self.updateCanvasGeoemtry)
 
         def hoverEnterEvent(self, event):
             self.axesPen.setWidth(self.axesWidthHighl)
@@ -179,16 +187,21 @@ class StarPlot(VisWidget):
             self.axisGrabbed = False
             self.setCursor(Qt.PointingHandCursor)
 
-        def paint(self, qp: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget=None):
-            self.canvasW = self.view.rect().size().width() - self.padding
-            self.canvasH = self.view.rect().size().height() - self.padding
+        def updateCanvasGeoemtry(self):
+            self.__canvasW = self.view.rect().size().width() - self.padding
+            self.__canvasH = self.view.rect().size().height() - self.padding
+            self.__canvasMaxDim = min(self.__canvasW, self.__canvasH)
+            lw = max(self.axesWidth, self.axesWidthHighl) / 2 + 4
+            self.__boundingRect = QRectF(QPoint(0 - lw, 0 - lw), QPoint(self.__canvasMaxDim / 2 + lw, lw))
 
+        def paint(self, qp: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget=None):
             qp.setPen(self.axesPen)
-            qp.drawLine(QPoint(0, 0), QPoint(min(self.canvasW, self.canvasH) / 2, 0))
+            qp.drawLine(QPoint(0, 0), QPoint(min(self.__canvasW, self.__canvasH) / 2, 0))
 
         def boundingRect(self):
-            lw = max(self.axesWidth, self.axesWidthHighl) / 2 + 4   # make bounding box slightly larger to increase click area
-            return QRectF(QPoint(0 - lw, 0 - lw), QPoint(min(self.canvasW, self.canvasH) / 2 + lw, lw))
+            if self.__boundingRect is None:
+                self.updateCanvasGeoemtry()
+            return self.__boundingRect
 
     class PlotAxisLabel(QGraphicsTextItem):
         def __init__(self, text):
@@ -207,10 +220,20 @@ class StarPlot(VisWidget):
             super().paint(qp, option, widget)
 
     class PlotPoint(QGraphicsItem):
-        def __init__(self, val, cls):
+        def __init__(self, view, val, cls):
             super().__init__()
             self.val = val
             self.cls = cls
+            self.view = view
+
+            self.__axisLen = 0
+            self.__boundingRect = None
+
+            view.axisChanged.connect(self.updateAxisLen)
+
+        def updateAxisLen(self):
+            self.__axisLen = self.parentItem().boundingRect().width()
+            self.__boundingRect = QRectF(QPoint(self.val * self.__axisLen - 2, -2), QPoint(self.val * self.__axisLen + 2, 2))
 
         def paint(self, qp: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget = None):
             # TODO: don't hardcode
@@ -222,8 +245,9 @@ class StarPlot(VisWidget):
             qp.drawRect(self.boundingRect())
 
         def boundingRect(self):
-            axisLen = self.parentItem().boundingRect().width()
-            return QRectF(QPoint(self.val * axisLen - 2, -2), QPoint(self.val * axisLen + 2, 2))
+            if self.__boundingRect is None:
+                self.updateAxisLen()
+            return self.__boundingRect
 
     class PlotLine(QGraphicsLineItem):
         def __init__(self,  view, p1, p2):
@@ -231,22 +255,31 @@ class StarPlot(VisWidget):
             self.p1 = p1
             self.p2 = p2
             self.cls = p1.cls
-            view.pointPosChanged.connect(self.updateLine)
-            self.updateLine()
             self.highlighted = False
 
-        def pointPos(self, point):
-            return point.mapToScene(point.boundingRect().center())
+            self.__p1Point = None
+            self.__p2Point = None
+
+            # TODO: don't hardcode
+            self.__pen1 = (QPen(QColor(0, 0, 255, 80)), QPen(QColor(0, 0, 255, 200)))
+            self.__pen1[0].setWidth(1)
+            self.__pen1[1].setWidth(3)
+            self.__pen2 = (QPen(QColor(255, 0, 0, 80)),  QPen(QColor(255, 0, 0, 200)))
+            self.__pen2[0].setWidth(1)
+            self.__pen2[1].setWidth(3)
+
+            self.updateLine()
+            view.axisChanged.connect(self.updateLine)
 
         def updateLine(self):
-            self.setLine(QLineF(self.pointPos(self.p1), self.pointPos(self.p2)))
+            p1 = self.p1.mapToScene(self.p1.boundingRect().center())
+            p2 = self.p2.mapToScene(self.p2.boundingRect().center())
+            self.setLine(QLineF(p1, p2))
 
         def paint(self, qp: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget = None):
-            # TODO: don't hardcode
-            pen = QPen(QColor(0, 0, 255, 80 if not self.highlighted else 200))
-            if "1" == self.cls:
-                pen = QPen(QColor(255, 0, 0, 80 if not self.highlighted else 200))
-            pen.setWidth(1 if not self.highlighted else 3)
-            self.setPen(pen)
+            if self.cls == "1":
+                self.setPen(self.__pen1[int(self.highlighted)])
+            else:
+                self.setPen(self.__pen2[int(self.highlighted)])
             super().paint(qp, option, widget)
 
