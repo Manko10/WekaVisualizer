@@ -251,14 +251,15 @@ class StarPlot(VisWidget):
                     r = a.rotation()
                     relAngle = (r + angleModifier) % 360
                     if clockwise and relAngle - relOwnAngle < 0:
-                        a.setRotation(r - angleDiff)
+                        a.setRotation((r - angleDiff) % 360)
                         numSteps += 1
                     elif not clockwise and relAngle - relOwnAngle > 0:
-                        a.setRotation(r + angleDiff)
+                        a.setRotation((r + angleDiff) % 360)
                         numSteps -= 1
-                self.setRotation(self.__origRotation + numSteps * angleDiff)
+                self.setRotation((self.__origRotation + numSteps * angleDiff) % 360)
                 self.__origRotation = self.rotation()
                 self.view.reparentLines()
+            self.__dragActive = False
 
         def updateCanvasGeoemtry(self):
             self.view.setUpdatesEnabled(False)
@@ -316,11 +317,6 @@ class StarPlot(VisWidget):
         def updateAxisLen(self):
             self.__axisLen = self.parentItem().boundingRect().width()
             self.__boundingRect = QRectF(QPoint(self.val * self.__axisLen - 2, -2), QPoint(self.val * self.__axisLen + 2, 2))
-
-        def itemChange(self, change, variant):
-            if change == StarPlot.PlotAxis.ItemAxisLenHasChanged:
-                print("child!")
-            return super().itemChange(change, variant)
 
         def paint(self, qp: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget = None):
             # TODO: don't hardcode
