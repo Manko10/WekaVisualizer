@@ -292,18 +292,10 @@ class StarPlot(VisWidget):
         def paint(self, qp: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget=None):
             p = self.parentItem()
             pRot = p.rotation()
-            pRec = p.boundingRect()
-            #if 90 < pRot < 270:
-            #    self.setRotation(180)
             trans = QTransform()
             trans.rotate(-p.rotation())
             self.setPos(0, 0)
-            #if 180 < pRot < 360:
-            #    #self.setPos(p.p2.x(), self.boundingRect().height())
-            #    trans.translate(p.p2.x(), self.boundingRect().height())
-            #else:
-                #self.setPos(p.p2.x(), 0)
-            #    trans.translate(p.p2.x(), 0)
+
             p2Scene = p.mapToScene(p.p2)
             if 0 <= pRot < 90:
                 trans.translate(p2Scene.x() - self.boundingRect().width(), p2Scene.y())
@@ -314,8 +306,7 @@ class StarPlot(VisWidget):
             elif 270 <= 360:
                 trans.translate(p2Scene.x() - self.boundingRect().width(), p2Scene.y() - self.boundingRect().height())
             self.setTransform(trans)
-            #else:
-            #    self.setPos(pRec.width() - self.boundingRect().width(), 0)
+
             super().paint(qp, option, widget)
 
     class PlotPoint(QGraphicsItem):
