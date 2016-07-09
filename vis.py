@@ -71,13 +71,11 @@ class StarPlot(VisWidget):
         self.setCacheMode(QGraphicsView.CacheBackground)
 
     def updateWidget(self):
-        for a in self.axes:
-            self.scene.removeItem(a)
-        self.axes.clear()
-        self.axisLabels.clear()
-        for l in self.lineGroups:
-            self.scene.removeItem(l)
+        self.scene.clear()
         self.lineGroups.clear()
+        self.highlightedItems.clear()
+        self.axisLabels.clear()
+        self.axes.clear()
 
         self.addAxes()
         self.addPoints()
@@ -338,10 +336,8 @@ class StarPlot(VisWidget):
             self.p1 = p1
             self.p2 = p2
             self.cls = p1.cls
+            self.view = view
             self.highlighted = False
-
-            self.__p1Point = None
-            self.__p2Point = None
 
             # TODO: don't hardcode
             self.__pen1 = (QPen(QColor(255, 0, 0, 80)), QPen(QColor(255, 0, 0, 200)))
