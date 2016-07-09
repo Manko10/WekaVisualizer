@@ -108,12 +108,21 @@ class StarPlot(VisWidget):
                 points.append(p)
 
                 if 0 < i:
-                    lines.append(self.PlotLine(self, p, points[i - 1]))
+                    lines.append(self.PlotLine(self, points[i - 1], p))
                 if i == numDims - 1:
                     lines.append(self.PlotLine(self, p, points[0]))
 
             group = self.scene.createItemGroup(lines)
             self.lineGroups.append(group)
+
+    def reparentLines(self):
+        for lg in self.lineGroups:
+            lines = lg.childItems()
+            lines = list(sorted(lines, key=lambda x: x.p1.parentItem().rotation()))
+
+            numDims = len(lines)
+            for i, l in enumerate(lines):
+                l.p2 = lines[i + 1 if i + 1 < numDims else 0].p1
 
     def resizeEvent(self, event):
         self.setUpdatesEnabled(False)
@@ -249,7 +258,7 @@ class StarPlot(VisWidget):
                         numSteps -= 1
                 self.setRotation(self.__origRotation + numSteps * angleDiff)
                 self.__origRotation = self.rotation()
-
+                self.view.reparentLines()
 
         def updateCanvasGeoemtry(self):
             self.view.setUpdatesEnabled(False)
@@ -339,10 +348,10 @@ class StarPlot(VisWidget):
             self.__p2Point = None
 
             # TODO: don't hardcode
-            self.__pen1 = (QPen(QColor(0, 0, 255, 80)), QPen(QColor(0, 0, 255, 200)))
+            self.__pen1 = (QPen(QColor(255, 0, 0, 80)), QPen(QColor(255, 0, 0, 200)))
             self.__pen1[0].setWidth(1)
             self.__pen1[1].setWidth(3)
-            self.__pen2 = (QPen(QColor(255, 0, 0, 80)),  QPen(QColor(255, 0, 0, 200)))
+            self.__pen2 = (QPen(QColor(0, 0, 255, 80)),  QPen(QColor(0, 0, 255, 200)))
             self.__pen2[0].setWidth(1)
             self.__pen2[1].setWidth(3)
 
