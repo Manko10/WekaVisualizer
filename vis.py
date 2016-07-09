@@ -35,7 +35,7 @@ class StarPlot(VisWidget):
     Radial star plot with multiple axes.
     """
 
-    geometryChanged = pyqtSignal()
+    pointPosChanged = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -53,12 +53,16 @@ class StarPlot(VisWidget):
         self.axisLabels        = []
         self.lineGroups        = []
 
+        self.highlightedItems = []
+
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         self.scene.setBackgroundBrush(self.bgColor)
 
         self.setDragMode(QGraphicsView.RubberBandDrag)
+
+        self.rubberBandChanged.connect(self.selectData)
 
     def updateWidget(self):
         for a in self.axes:
@@ -113,9 +117,26 @@ class StarPlot(VisWidget):
         r = QRectF(QPointF(r.x(), r.y()) * t, QSizeF(r.width(), r.height()))
         self.setSceneRect(r)
 
+    def selectData(self, rubberBandRect, fromScenePoint, toScenePoint):
+        if fromScenePoint == toScenePoint:
+            return
+
+        # unselect all currently selected items
+        for h in self.highlightedItems:
+            h.highlighted = False
+        self.highlightedItems.clear()
+
+        sel = self.items(rubberBandRect)
+        for s in sel:
+            if type(s) == self.PlotLine:
+                siblings = s.parentItem().childItems()
+                for sib in siblings:
+                    sib.highlighted = True
+                    self.highlightedItems.append(sib)
+
     def paintEvent(self, event):
         super().paintEvent(event)
-        self.geometryChanged.emit()
+        self.pointPosChanged.emit()
 
     def sizeHint(self):
         return QSize(1000, 1000)
@@ -210,8 +231,9 @@ class StarPlot(VisWidget):
             self.p1 = p1
             self.p2 = p2
             self.cls = p1.cls
-            view.geometryChanged.connect(self.updateLine)
+            view.pointPosChanged.connect(self.updateLine)
             self.updateLine()
+            self.highlighted = False
 
         def pointPos(self, point):
             return point.mapToScene(point.boundingRect().center())
@@ -221,10 +243,10 @@ class StarPlot(VisWidget):
 
         def paint(self, qp: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget = None):
             # TODO: don't hardcode
-            pen = QPen(QColor(0, 0, 255, 80))
+            pen = QPen(QColor(0, 0, 255, 80 if not self.highlighted else 200))
             if "1" == self.cls:
-                pen = QPen(QColor(255, 0, 0, 80))
-            pen.setWidth(1)
+                pen = QPen(QColor(255, 0, 0, 80 if not self.highlighted else 200))
+            pen.setWidth(1 if not self.highlighted else 3)
             self.setPen(pen)
             super().paint(qp, option, widget)
 
