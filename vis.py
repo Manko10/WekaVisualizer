@@ -193,7 +193,7 @@ class StarPlot(VisWidget):
             self.__origRotation = self.rotation()
             self.__dragActive = False
 
-            self.view.canvasAreaChanged.connect(self.updateCanvasGeoemtry)
+            self.view.canvasAreaChanged.connect(self.updateCanvasGeometry)
 
         def hoverEnterEvent(self, event):
             self.axesPen.setWidth(self.axesWidthHighl)
@@ -259,7 +259,7 @@ class StarPlot(VisWidget):
                 self.view.reparentLines()
             self.__dragActive = False
 
-        def updateCanvasGeoemtry(self):
+        def updateCanvasGeometry(self):
             self.view.setUpdatesEnabled(False)
             self.__canvasW = self.view.rect().size().width() - self.padding
             self.__canvasH = self.view.rect().size().height() - self.padding
@@ -281,7 +281,7 @@ class StarPlot(VisWidget):
 
         def boundingRect(self):
             if self.__boundingRect is None:
-                self.updateCanvasGeoemtry()
+                self.updateCanvasGeometry()
             return self.__boundingRect
 
     class PlotAxisLabel(QGraphicsTextItem):
