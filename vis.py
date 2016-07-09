@@ -1,8 +1,8 @@
-from PyQt5.QtGui import QPainter, QColor, QTransform, QFont, QFontMetrics, QPen, QPolygon, QDrag
+from PyQt5.QtGui import QPainter, QColor, QTransform, QFont, QFontMetrics, QPen, QPolygon, QDrag, QCursor, QVector2D
 from PyQt5.QtCore import QSize, QPoint, QPointF, QLineF, QRect, QRectF, Qt, QSizeF, QTimer, pyqtSignal
 from PyQt5.QtWidgets import *
 from data import Relation
-import abc
+import abc, math
 
 
 class VisWidget(QGraphicsView):
@@ -162,6 +162,9 @@ class StarPlot(VisWidget):
             super().__init__()
             self.view = view
 
+            self.p1 = QPoint(0, 0)
+            self.p2 = QPoint(0, 0)
+
             self.padding = 30
             self.__canvasW = view.rect().size().width() - self.padding
             self.__canvasH = view.rect().size().height() - self.padding
@@ -173,10 +176,15 @@ class StarPlot(VisWidget):
             self.axesPen = QPen(self.axesColor, self.axesWidth)
 
             self.setAcceptHoverEvents(True)
+            self.setAcceptDrops(True)
             self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
 
             self.__canvasMaxDim = 0
             self.__boundingRect = None
+
+            # save original rotation during axis reordering
+            self.__origRotation = self.rotation()
+            self.__dragActive = False
 
             self.view.canvasAreaChanged.connect(self.updateCanvasGeoemtry)
 
@@ -194,9 +202,54 @@ class StarPlot(VisWidget):
             self.axisGrabbed = True
             self.setCursor(Qt.ClosedHandCursor)
 
+            if not self.__dragActive:
+                self.__origRotation = self.rotation()
+                self.__dragActive = True
+
+        def mouseMoveEvent(self, event):
+            if self.__dragActive:
+                mousePos = self.view.mapToScene(self.view.mapFromGlobal(QCursor.pos()))
+                vec1 = QVector2D(mousePos)
+                vec1.normalize()
+                trans = QTransform()
+                trans.rotate(self.rotation())
+                vec2 = QVector2D(self.p2 * trans)
+                vec2.normalize()
+                angle = math.acos(QVector2D.dotProduct(vec1, vec2)) * 180 / math.pi
+
+                # clockwise rotation
+                if vec1.y() * vec2.x() < vec1.x() * vec2.y():
+                    angle *= -1
+
+                angle = (self.rotation() + angle) % 360
+                self.setRotation(angle)
+
         def mouseReleaseEvent(self, event):
             self.axisGrabbed = False
             self.setCursor(Qt.PointingHandCursor)
+
+            if self.__dragActive:
+                relRotation = (self.rotation() - self.__origRotation) % 360
+                clockwise = (relRotation <= 180)
+                angleModifier = 360 - self.__origRotation
+                relOwnAngle = (self.rotation() + angleModifier) % 360
+                angleDiff = 360 / len(self.view.axes)
+                numSteps = 0
+                for a in self.view.axes:
+                    if a == self:
+                        continue
+
+                    r = a.rotation()
+                    relAngle = (r + angleModifier) % 360
+                    if clockwise and relAngle - relOwnAngle < 0:
+                        a.setRotation(r - angleDiff)
+                        numSteps += 1
+                    elif not clockwise and relAngle - relOwnAngle > 0:
+                        a.setRotation(r + angleDiff)
+                        numSteps -= 1
+                self.setRotation(self.__origRotation + numSteps * angleDiff)
+                self.__origRotation = self.rotation()
+
 
         def updateCanvasGeoemtry(self):
             self.view.setUpdatesEnabled(False)
@@ -215,7 +268,8 @@ class StarPlot(VisWidget):
 
         def paint(self, qp: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget=None):
             qp.setPen(self.axesPen)
-            qp.drawLine(QPoint(0, 0), QPoint(min(self.__canvasW, self.__canvasH) / 2, 0))
+            self.p2 = QPoint(min(self.__canvasW, self.__canvasH) / 2, 0)
+            qp.drawLine(self.p1, self.p2)
 
         def boundingRect(self):
             if self.__boundingRect is None:
