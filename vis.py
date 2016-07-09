@@ -1,5 +1,5 @@
-from PyQt5.QtGui import QPainter, QColor, QTransform, QFont, QFontMetrics, QPen, QPolygon
-from PyQt5.QtCore import QSize, QPoint, QPointF, QLineF, QRect, QRectF, Qt, QSizeF, pyqtSignal
+from PyQt5.QtGui import QPainter, QColor, QTransform, QFont, QFontMetrics, QPen, QPolygon, QDrag
+from PyQt5.QtCore import QSize, QPoint, QPointF, QLineF, QRect, QRectF, Qt, QSizeF, QTimer, pyqtSignal
 from PyQt5.QtWidgets import *
 from data import Relation
 import abc
@@ -34,7 +34,8 @@ class StarPlot(VisWidget):
     Radial star plot with multiple axes.
     """
 
-    axisChanged  = pyqtSignal()
+    canvasAreaChanged = pyqtSignal()
+    axisChanged       = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -53,6 +54,11 @@ class StarPlot(VisWidget):
         self.lineGroups        = []
 
         self.highlightedItems = []
+
+        # timer for delayed plot update on resize events
+        self.resizeUpdateDelay = 150
+        self.__resizeDelayTimer = QTimer(self)
+        self.__resizeDelayTimer.timeout.connect(self.canvasAreaChanged.emit)
 
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -117,7 +123,7 @@ class StarPlot(VisWidget):
         t.translate(-r.width() / 2, -r.height() / 2)
         r = QRectF(QPointF(r.x(), r.y()) * t, QSizeF(r.width(), r.height()))
         self.setSceneRect(r)
-        self.axisChanged.emit()
+        self.__resizeDelayTimer.start(self.resizeUpdateDelay)
         self.setUpdatesEnabled(True)
 
     def selectData(self, rubberBandRect, fromScenePoint, toScenePoint):
@@ -143,9 +149,6 @@ class StarPlot(VisWidget):
                         sib.highlighted = True
                         self.highlightedItems.append(sib)
 
-    #def paintEvent(self, event):
-    #    super().paintEvent(event)
-
     def sizeHint(self):
         return QSize(1000, 1000)
 
@@ -153,6 +156,8 @@ class StarPlot(VisWidget):
         return QSize(400, 400)
 
     class PlotAxis(QGraphicsItem):
+        ItemAxisLenHasChanged = 0x9901
+
         def __init__(self, view):
             super().__init__()
             self.view = view
@@ -168,11 +173,12 @@ class StarPlot(VisWidget):
             self.axesPen = QPen(self.axesColor, self.axesWidth)
 
             self.setAcceptHoverEvents(True)
+            self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
 
             self.__canvasMaxDim = 0
             self.__boundingRect = None
 
-            self.view.axisChanged.connect(self.updateCanvasGeoemtry)
+            self.view.canvasAreaChanged.connect(self.updateCanvasGeoemtry)
 
         def hoverEnterEvent(self, event):
             self.axesPen.setWidth(self.axesWidthHighl)
@@ -193,11 +199,19 @@ class StarPlot(VisWidget):
             self.setCursor(Qt.PointingHandCursor)
 
         def updateCanvasGeoemtry(self):
+            self.view.setUpdatesEnabled(False)
             self.__canvasW = self.view.rect().size().width() - self.padding
             self.__canvasH = self.view.rect().size().height() - self.padding
             self.__canvasMaxDim = min(self.__canvasW, self.__canvasH)
             lw = max(self.axesWidth, self.axesWidthHighl) / 2 + 4
             self.__boundingRect = QRectF(QPoint(0 - lw, 0 - lw), QPoint(self.__canvasMaxDim / 2 + lw, lw))
+            self.itemChange(self.ItemAxisLenHasChanged, None)
+            self.view.setUpdatesEnabled(True)
+
+        def itemChange(self, change, variant):
+            if change == self.ItemAxisLenHasChanged or change == QGraphicsItem.ItemRotationHasChanged:
+                self.view.axisChanged.emit()
+            return super().itemChange(change, variant)
 
         def paint(self, qp: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget=None):
             qp.setPen(self.axesPen)
@@ -239,6 +253,11 @@ class StarPlot(VisWidget):
         def updateAxisLen(self):
             self.__axisLen = self.parentItem().boundingRect().width()
             self.__boundingRect = QRectF(QPoint(self.val * self.__axisLen - 2, -2), QPoint(self.val * self.__axisLen + 2, 2))
+
+        def itemChange(self, change, variant):
+            if change == StarPlot.PlotAxis.ItemAxisLenHasChanged:
+                print("child!")
+            return super().itemChange(change, variant)
 
         def paint(self, qp: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget = None):
             # TODO: don't hardcode
