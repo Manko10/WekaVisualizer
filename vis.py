@@ -1,7 +1,6 @@
-from PyQt5.QtWidgets import QWidget
 from PyQt5.QtGui import QPainter, QColor, QTransform, QFont, QFontMetrics, QPen, QPolygon
 from PyQt5.QtCore import QSize, QPoint, QPointF, QLineF, QRect, QRectF, Qt, QSizeF, pyqtSignal
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsItem, QStyleOptionGraphicsItem, QGraphicsTextItem, QGraphicsLineItem, QGraphicsItemGroup
+from PyQt5.QtWidgets import *
 from data import Relation
 import abc
 
@@ -125,18 +124,24 @@ class StarPlot(VisWidget):
         if fromScenePoint == toScenePoint:
             return
 
-        # unselect all currently selected items
-        for h in self.highlightedItems:
-            h.highlighted = False
-        self.highlightedItems.clear()
+        if QApplication.keyboardModifiers() != Qt.ShiftModifier and QApplication.keyboardModifiers() != Qt.ControlModifier:
+            # unselect all currently selected items
+            for h in self.highlightedItems:
+                h.highlighted = False
+            self.highlightedItems.clear()
 
         sel = self.items(rubberBandRect)
         for s in sel:
             if type(s) == self.PlotLine:
                 siblings = s.parentItem().childItems()
                 for sib in siblings:
-                    sib.highlighted = True
-                    self.highlightedItems.append(sib)
+                    if QApplication.keyboardModifiers() == Qt.ControlModifier:
+                        if sib in self.highlightedItems:
+                            sib.highlighted = False
+                            self.highlightedItems.remove(sib)
+                    else:
+                        sib.highlighted = True
+                        self.highlightedItems.append(sib)
 
     #def paintEvent(self, event):
     #    super().paintEvent(event)
