@@ -39,6 +39,7 @@ class RelationFactory(object):
                         for i, t in enumerate(fieldTypes):
                             fields[i] = t(fields[i])
 
+                        rel.classes.add(fields[-1])
                         rel.datasets.append(fields)
             except:
                 raise Exception("ARFF parsing error!")
@@ -48,9 +49,10 @@ class RelationFactory(object):
 
 class Relation(object):
     def __init__(self):
-        self.relName = ""
+        self.relName    = ""
         self.fieldNames = []
-        self.datasets = []
+        self.datasets   = []
+        self.classes    = set()
 
         self.__normed_datasets = None
 

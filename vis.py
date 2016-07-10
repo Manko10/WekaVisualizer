@@ -11,6 +11,7 @@ class VisWidget(QGraphicsView):
         self.scene = QGraphicsScene()
         super().__init__(self.scene)
         self.relation = None
+        self.plotPalette = None
         self.setRenderHint(QPainter.Antialiasing)
 
     def setRelation(self, rel: Relation):
@@ -19,6 +20,15 @@ class VisWidget(QGraphicsView):
         @param rel: data to be visualized
         """
         self.relation = rel
+        self.updateWidget()
+
+    def setPlotPalette(self, paletteDict):
+        """
+        Set color palette for lines and points.
+
+        @param paletteDict: dict with class names as keys and L{QColor} objects as values
+        """
+        self.plotPalette = paletteDict
         self.updateWidget()
 
     @abc.abstractmethod
@@ -49,7 +59,6 @@ class StarPlot(VisWidget):
         self.class1Pen   = QPen(self.class1Color)
         self.class2Pen   = QPen(self.class2Color)
 
-        self.hoverOutlineWidth = 5
         self.axes              = []
         self.axisLabels        = []
         self.lineGroups        = []
@@ -71,7 +80,15 @@ class StarPlot(VisWidget):
         self.rubberBandChanged.connect(self.selectData)
         self.setCacheMode(QGraphicsView.CacheBackground)
 
+    def getClassColor(self, cls):
+        if self._colorPalette is None:
+            return QColor()
+        return self._colorPalette.get(cls, QColor())
+
     def updateWidget(self):
+        if self.relation is None:
+            return
+
         self.lineGroups.clear()
         self.highlightedItems.clear()
         self.axisLabels.clear()
