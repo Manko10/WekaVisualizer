@@ -224,8 +224,6 @@ class StarPlot(VisWidget):
             """
             Q_PROPERTY for animating relative rotations. Fix the initial rotation first using
             L{initRelativeRotation()} before starting the animation.
-
-            @return: current rotation
             """
             self.setRotation((self.__relRotationStartValue + rot) % 360)
 
