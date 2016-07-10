@@ -81,6 +81,9 @@ class WekaVisualizer(QWidget):
         groupClasses = QGroupBox(self.tr("Classes"))
         classesVBox = QVBoxLayout()
         groupClasses.setLayout(classesVBox)
+
+        self._plotPalette.clear()
+
         for i, c in enumerate(self.plot.relation.allClasses):
             hbox = QHBoxLayout()
             hbox.setAlignment(Qt.AlignLeft)
@@ -113,6 +116,7 @@ class WekaVisualizer(QWidget):
             hbox.addWidget(label)
 
             classesVBox.addLayout(hbox)
+
         self.plot.setPlotPalette(self._plotPalette)
         self.dynamicControlLayout.addWidget(groupClasses)
 
@@ -202,6 +206,7 @@ class WekaVisualizer(QWidget):
         if "" != fileName[0] and os.path.isfile(fileName[0]):
             self.plot.setRelation(data.RelationFactory.loadFromFile(fileName[0]))
             self.addControlArea()
+            self.plot.updateWidget()
 
 
 # override excepthook to correctly show tracebacks in PyCharm

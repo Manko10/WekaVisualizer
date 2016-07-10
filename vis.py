@@ -72,6 +72,10 @@ class StarPlot(VisWidget):
         self.__resizeDelayTimer = QTimer(self)
         self.__resizeDelayTimer.timeout.connect(self.canvasAreaChanged.emit)
 
+        self.selectionUpdateDelay = 100
+        self.__selectionUpdateTimer = QTimer(self)
+        self.__selectionUpdateTimer.timeout.connect(self.selectionChanged.emit)
+
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
@@ -86,7 +90,7 @@ class StarPlot(VisWidget):
         if self.plotPalette is None:
             return QColor()
 
-        return self.plotPalette.get(cls, QColor())
+        return self.plotPalette[cls]
 
     def updateWidget(self):
         self.setUpdatesEnabled(False)
@@ -201,7 +205,7 @@ class StarPlot(VisWidget):
                         self.highlightedItems.add(sib)
                     self.highlightedRings.add(parent)
 
-        self.selectionChanged.emit()
+        self.__selectionUpdateTimer.start(self.selectionUpdateDelay)
 
     def sizeHint(self):
         return QSize(1000, 1000)
