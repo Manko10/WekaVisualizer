@@ -64,6 +64,7 @@ class WekaVisualizer(QWidget):
         # TODO: remove this convenience line
         self.plot.setRelation(data.RelationFactory.loadFromFile("/home/janek/University/SS 15/Visualization/VisProject/gutenberg.arff"))
         self.addPlotControls()
+        self.plot.updateWidget()
 
     def addPlotControls(self):
         # clear layout

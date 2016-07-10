@@ -21,7 +21,6 @@ class VisWidget(QGraphicsView):
         """
         self.relation = rel
         self.relation.dataChanged.connect(self.updateWidget)
-        self.updateWidget()
 
     def setPlotPalette(self, paletteDict):
         """
@@ -30,7 +29,6 @@ class VisWidget(QGraphicsView):
         @param paletteDict: dict with class names as keys and L{QColor} objects as values
         """
         self.plotPalette = paletteDict
-        self.updateWidget()
 
     @abc.abstractmethod
     def updateWidget(self):
@@ -61,6 +59,7 @@ class StarPlot(VisWidget):
         self.class2Pen   = QPen(self.class2Color)
 
         self.axes              = []
+        self.axisAngles        = []
         self.axisLabels        = []
         self.lineGroups        = []
 
@@ -93,6 +92,11 @@ class StarPlot(VisWidget):
         if self.relation is None:
             return
 
+        # save axis rotations
+        self.axisAngles.clear()
+        for a in self.axes:
+            self.axisAngles.append(a.rotation())
+
         self.lineGroups.clear()
         self.highlightedItems.clear()
         self.axisLabels.clear()
@@ -102,6 +106,9 @@ class StarPlot(VisWidget):
         self.addAxes()
         self.addPoints()
 
+        if self.axisAngles:
+            self.reparentLines()
+
         self.setUpdatesEnabled(False)
 
     def addAxes(self):
@@ -110,7 +117,10 @@ class StarPlot(VisWidget):
         for i in range(numDims):
             axis = self.PlotAxis(self)
             self.scene.addItem(axis)
-            axis.setRotation(angle * i)
+            if self.axisAngles and i < len(self.axisAngles):
+                axis.setRotation(self.axisAngles[i])
+            else:
+                axis.setRotation(angle * i)
             self.axes.append(axis)
 
             text = self.PlotAxisLabel(self.relation.fieldNames[i])
