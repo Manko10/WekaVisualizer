@@ -139,7 +139,7 @@ class WekaVisualizer(QWidget):
             className = self.activeSwatch.dataClassLabel
             self._plotPalette[className] = color
             self.plot.setPlotPalette(self._plotPalette)
-            print(className)
+            self.plot.updateWidget()
 
     def center(self):
         qr = self.frameGeometry()
