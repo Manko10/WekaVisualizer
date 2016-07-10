@@ -256,7 +256,7 @@ class StarPlot(VisWidget):
                 trans.rotate(self.rotation())
                 vec2 = QVector2D(self.p2 * trans)
                 vec2.normalize()
-                angle = math.acos(QVector2D.dotProduct(vec1, vec2)) * 180 / math.pi
+                angle = math.acos(max(-1, min(1, QVector2D.dotProduct(vec1, vec2)))) * 180 / math.pi
 
                 # clockwise rotation
                 if vec1.y() * vec2.x() < vec1.x() * vec2.y():
