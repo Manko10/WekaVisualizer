@@ -52,7 +52,7 @@ class StarPlot(VisWidget):
         super().__init__()
         self.bgColor        = QColor(220, 220, 220)
 
-        self.labelFont      = QFont('Decorative', 10)
+        self.labelFont      = QFont('Decorative', 8)
 
         self.class1Color = Qt.red
         self.class2Color = Qt.blue
@@ -121,6 +121,7 @@ class StarPlot(VisWidget):
     def addAxes(self):
         numDims = len(self.relation.fieldNames) - 1
         angle = 360 / numDims
+        axisDomains = self.relation.axisDomains
         for i in range(numDims):
             axis = self.PlotAxis(self)
             self.scene.addItem(axis)
@@ -130,7 +131,8 @@ class StarPlot(VisWidget):
                 axis.setRotation(angle * i)
             self.axes.append(axis)
 
-            text = self.PlotAxisLabel(self.relation.fieldNames[i])
+            domain = axisDomains[i]
+            text = self.PlotAxisLabel("{}\n[{:.2f},{:.2f}]".format(self.relation.fieldNames[i], domain[0], domain[1]))
             text.setFont(self.labelFont)
             self.axisLabels.append(text)
             text.setParentItem(axis)

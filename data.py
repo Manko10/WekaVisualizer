@@ -75,6 +75,8 @@ class Relation(QObject):
         self.__minVals = None
         self.__maxVals = None
 
+        self.__axisDomains = None
+
     @property
     def fieldNames(self):
         """
@@ -101,9 +103,20 @@ class Relation(QObject):
         """
         self.__datasetsAll = datasets
         self.__datasets = list(datasets)
+        self.__axisDomains = None
         for ds in self.__datasetsAll:
             self.__datasetsPerClass[ds[-1]] = self.__datasetsPerClass.get(ds[-1], 0) + 1
         self.dataChanged.emit()
+
+    @property
+    def axisDomains(self):
+        if self.__axisDomains is None:
+            if self.__scale_mode == self.ScaleModeLocal:
+                self.__axisDomains = list(zip(self.minVals(), self.maxVals()))
+            else:
+                self.__axisDomains = [(min(self.minVals()), max(self.maxVals()))] * (len(self.fieldNames) - 1)
+
+        return self.__axisDomains
 
     def numDatasetsForClass(self, cls):
         return self.__datasetsPerClass.get(cls, 0)
@@ -119,10 +132,10 @@ class Relation(QObject):
         return self.__maxVals
 
     def __calcMinMaxVals(self):
-        minVals = [float("inf")] * len(self.fieldNames)
-        maxVals = [float("-inf")] * len(self.fieldNames)
+        minVals = [float("inf")] * (len(self.fieldNames) - 1)
+        maxVals = [float("-inf")] * (len(self.fieldNames) - 1)
         for ds in self.datasets:
-            for i, d in enumerate(ds):
+            for i, d in enumerate(ds[:-1]):
                 if type(d) != float:
                     continue
 
@@ -159,6 +172,7 @@ class Relation(QObject):
         if mode != self.__scale_mode and mode in (self.ScaleModeGlobal, self.ScaleModeLocal):
             self.__scale_mode = mode
             self.__scaled_datasets = None
+            self.__axisDomains = None
             self.dataChanged.emit()
 
     def getScaledDatasets(self, minOffset=.1, maxOffset=.1):
@@ -166,8 +180,8 @@ class Relation(QObject):
             self.__scaled_datasets = []
 
             if self.__scale_mode == self.ScaleModeGlobal:
-                minVals = [min(self.minVals())] * len(self.fieldNames)
-                maxVals = [max(self.maxVals())] * len(self.fieldNames)
+                minVals = [min(self.minVals())] * (len(self.fieldNames) - 1)
+                maxVals = [max(self.maxVals())] * (len(self.fieldNames) - 1)
             else:
                 minVals = self.minVals()
                 maxVals = self.maxVals()
