@@ -70,6 +70,10 @@ class Relation(QObject):
 
     @property
     def fieldNames(self):
+        """
+        Getter for field names. DO NOT use direct list access operations on the returned list as it will
+        mess up data filtering. Use the setter to replace the full list instead.
+        """
         return self.__fieldNames
 
     @fieldNames.setter
@@ -84,6 +88,10 @@ class Relation(QObject):
 
     @datasets.setter
     def datasets(self, datasets):
+        """
+        Getter for fdatasets. DO NOT use direct list access operations on the returned list as it will
+        mess up data filtering. Use the setter to replace the full list instead.
+        """
         self.__datasetsAll = datasets
         self.__datasets = list(datasets)
         self.dataChanged.emit()
