@@ -74,7 +74,7 @@ class WekaVisualizer(QWidget):
         groupClasses = QGroupBox(self.tr("Classes"))
         classesVBox = QVBoxLayout()
         groupClasses.setLayout(classesVBox)
-        for i, c in enumerate(self.plot.relation.classes):
+        for i, c in enumerate(self.plot.relation.allClasses):
             hbox = QHBoxLayout()
             hbox.setAlignment(Qt.AlignLeft)
 
@@ -118,9 +118,9 @@ class WekaVisualizer(QWidget):
         p.findChild(QWidget, "label_" + name).setEnabled(state)
 
         if state:
-            self.plot.relation.setClassFilter(self.plot.relation.classes | set(s.dataClassLabel))
+            self.plot.relation.setClassFilter(self.plot.relation.activeClasses | set(s.dataClassLabel))
         else:
-            self.plot.relation.setClassFilter(self.plot.relation.classes - set(s.dataClassLabel))
+            self.plot.relation.setClassFilter(self.plot.relation.activeClasses - set(s.dataClassLabel))
 
     def selectClassColor(self):
         s = self.sender()

@@ -41,9 +41,10 @@ class RelationFactory(object):
                         for i, t in enumerate(fieldTypes):
                             fields[i] = t(fields[i])
 
-                        rel.classes.add(fields[-1])
+                        rel.allClasses.add(fields[-1])
                         datasets.append(fields)
                 rel.datasets = datasets
+                rel.activeClasses = set(rel.allClasses)
             except:
                 raise Exception("ARFF parsing error!")
 
@@ -61,7 +62,8 @@ class Relation(QObject):
         self.__fieldNamesAll = []
         self.__datasets      = []
         self.__datasetsAll   = []
-        self.classes         = set()
+        self.allClasses      = set()
+        self.activeClasses   = set()
 
         self.__normed_datasets = None
 
@@ -128,6 +130,7 @@ class Relation(QObject):
         if len(self.__datasets) != len(self.__datasetsAll):
             self.__datasets = list(self.__datasets)
 
+        self.activeClasses = set(self.allClasses)
         self.__normed_datasets = None
 
         self.dataChanged.emit()
@@ -135,6 +138,7 @@ class Relation(QObject):
     def setClassFilter(self, includeClasses):
         self.__datasets = [d for d in self.__datasetsAll if d[-1] in includeClasses]
         self.__normed_datasets = None
+        self.activeClasses = includeClasses
         self.dataChanged.emit()
 
     def getNormalizedDatasets(self, normGlobally=False, minOffset=.1, maxOffset=.1):
