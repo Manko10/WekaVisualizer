@@ -119,9 +119,9 @@ class WekaVisualizer(QWidget):
         p.findChild(QWidget, "label_" + name).setEnabled(state)
 
         if state:
-            self.plot.relation.setClassFilter(self.plot.relation.activeClasses | set(s.dataClassLabel))
+            self.plot.relation.setClassFilter(self.plot.relation.activeClasses | {s.dataClassLabel})
         else:
-            self.plot.relation.setClassFilter(self.plot.relation.activeClasses - set(s.dataClassLabel))
+            self.plot.relation.setClassFilter(self.plot.relation.activeClasses - {s.dataClassLabel})
 
     def selectClassColor(self):
         s = self.sender()
