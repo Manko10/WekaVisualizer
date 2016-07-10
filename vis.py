@@ -72,7 +72,7 @@ class StarPlot(VisWidget):
         self.__resizeDelayTimer = QTimer(self)
         self.__resizeDelayTimer.timeout.connect(self.canvasAreaChanged.emit)
 
-        self.selectionUpdateDelay = 100
+        self.selectionUpdateDelay = 200
         self.__selectionUpdateTimer = QTimer(self)
         self.__selectionUpdateTimer.timeout.connect(self.selectionChanged.emit)
 
