@@ -20,6 +20,7 @@ class VisWidget(QGraphicsView):
         @param rel: data to be visualized
         """
         self.relation = rel
+        self.relation.dataChanged.connect(self.updateWidget)
         self.updateWidget()
 
     def setPlotPalette(self, paletteDict):
@@ -87,6 +88,8 @@ class StarPlot(VisWidget):
         return self.plotPalette.get(cls, QColor())
 
     def updateWidget(self):
+        self.setUpdatesEnabled(False)
+
         if self.relation is None:
             return
 
@@ -98,6 +101,8 @@ class StarPlot(VisWidget):
 
         self.addAxes()
         self.addPoints()
+
+        self.setUpdatesEnabled(False)
 
     def addAxes(self):
         numDims = len(self.relation.fieldNames) - 1

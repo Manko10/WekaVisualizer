@@ -1,3 +1,4 @@
+from PyQt5.QtCore import QObject, pyqtSignal
 import re
 
 
@@ -14,6 +15,7 @@ class RelationFactory(object):
                 fieldNames = []
                 fieldTypes = []
                 dataPart = False
+                datasets = []
                 for l in lines:
                     l = l.strip()
                     if "" == l or "%" == l[0]:
@@ -40,24 +42,51 @@ class RelationFactory(object):
                             fields[i] = t(fields[i])
 
                         rel.classes.add(fields[-1])
-                        rel.datasets.append(fields)
+                        datasets.append(fields)
+                rel.datasets = datasets
             except:
                 raise Exception("ARFF parsing error!")
 
         return rel
 
 
-class Relation(object):
+class Relation(QObject):
+    dataChanged = pyqtSignal()
+
     def __init__(self):
-        self.relName    = ""
-        self.fieldNames = []
-        self.datasets   = []
-        self.classes    = set()
+        super().__init__()
+
+        self.relName         = ""
+        self.__fieldNames    = []
+        self.__fieldNamesAll = []
+        self.__datasets      = []
+        self.__datasetsAll   = []
+        self.classes         = set()
 
         self.__normed_datasets = None
 
         self.__minVals = None
         self.__maxVals = None
+
+    @property
+    def fieldNames(self):
+        return self.__fieldNames
+
+    @fieldNames.setter
+    def fieldNames(self, names):
+        self.__fieldNamesAll = names
+        self.__fieldNames = list(names)
+        self.dataChanged.emit()
+
+    @property
+    def datasets(self):
+        return self.__datasets
+
+    @datasets.setter
+    def datasets(self, datasets):
+        self.__datasetsAll = datasets
+        self.__datasets = list(datasets)
+        self.dataChanged.emit()
 
     def getMinVals(self):
         if self.__minVals is None:
@@ -83,6 +112,22 @@ class Relation(object):
         if minVals[0] < float("inf"):
             self.__minVals = minVals
             self.__maxVals = maxVals
+
+    def resetFilters(self):
+        if len(self.__fieldNames) != len(self.__fieldNamesAll):
+            self.__fieldNames = list(self.__fieldNames)
+
+        if len(self.__datasets) != len(self.__datasetsAll):
+            self.__datasets = list(self.__datasets)
+
+        self.__normed_datasets = None
+
+        self.dataChanged.emit()
+
+    def setClassFilter(self, includeClasses):
+        self.__datasets = [d for d in self.__datasetsAll if d[-1] in includeClasses]
+        self.__normed_datasets = None
+        self.dataChanged.emit()
 
     def getNormalizedDatasets(self, normGlobally=False, minOffset=.1, maxOffset=.1):
         if self.__normed_datasets is None:

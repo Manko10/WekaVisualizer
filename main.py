@@ -79,17 +79,18 @@ class WekaVisualizer(QWidget):
             hbox.setAlignment(Qt.AlignLeft)
 
             checkBox = QCheckBox()
+            checkBox.dataClassLabel = c
             checkBox.setObjectName("class" + str(i))
             checkBox.setChecked(True)
             checkBox.stateChanged.connect(self.toggleClassState)
             hbox.addWidget(checkBox)
 
             swatch = QPushButton()
+            swatch.dataClassLabel = c
             swatch.setObjectName("swatch_class" + str(i))
             swatch.setFocusPolicy(Qt.NoFocus)
             swatch.setFixedSize(QSize(30, 30))
             swatch.clicked.connect(self.selectClassColor)
-            swatch.dataClassLabel = c
             pal = swatch.palette()
             color = self.defaultPalette[i % len(self.defaultPalette)]
             pal.setColor(QPalette.Button, color)
@@ -98,6 +99,7 @@ class WekaVisualizer(QWidget):
             hbox.addWidget(swatch)
 
             label = QLabel(c)
+            label.dataClassLabel = c
             label.setTextFormat(Qt.PlainText)
             label.setObjectName("label_class" + str(i))
             label.setBuddy(swatch)
@@ -114,6 +116,11 @@ class WekaVisualizer(QWidget):
         state = (state != Qt.Unchecked)
         p.findChild(QWidget, "swatch_" + name).setEnabled(state)
         p.findChild(QWidget, "label_" + name).setEnabled(state)
+
+        if state:
+            self.plot.relation.setClassFilter(self.plot.relation.classes | set(s.dataClassLabel))
+        else:
+            self.plot.relation.setClassFilter(self.plot.relation.classes - set(s.dataClassLabel))
 
     def selectClassColor(self):
         s = self.sender()
