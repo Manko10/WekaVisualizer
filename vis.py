@@ -177,7 +177,7 @@ class StarPlot(VisWidget):
             for i, l in enumerate(lines):
                 l.p2 = lines[i + 1 if i + 1 < numDims else 0].p1
 
-    def mouseDoubleClickEvent(self, evenz):
+    def mouseDoubleClickEvent(self, event):
         self.colorDialog.setCurrentColor(self.bgColor)
         self.colorDialog.open(self._setBackgroundColor)
 
