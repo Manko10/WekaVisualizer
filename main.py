@@ -181,6 +181,7 @@ class WekaVisualizer(QWidget):
         optsVBox = QVBoxLayout()
         groupOpts.setLayout(optsVBox)
 
+        # feature scaling
         scaleHBox = QHBoxLayout()
         scaleHBox.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         scaleOpt = QCheckBox()

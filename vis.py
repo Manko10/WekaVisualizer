@@ -50,19 +50,21 @@ class StarPlot(VisWidget):
 
     def __init__(self):
         super().__init__()
-        self.bgColor        = QColor(220, 220, 220)
 
-        self.labelFont      = QFont('Decorative', 8)
+        self.__bgColor = QColor(220, 220, 220)
+        self.scene.setBackgroundBrush(self.__bgColor)
+
+        self.labelFont = QFont('Decorative', 8)
 
         self.class1Color = Qt.red
         self.class2Color = Qt.blue
         self.class1Pen   = QPen(self.class1Color)
         self.class2Pen   = QPen(self.class2Color)
 
-        self.axes              = []
-        self.axisAngles        = []
-        self.axisLabels        = []
-        self.lineGroups        = []
+        self.axes       = []
+        self.axisAngles = []
+        self.axisLabels = []
+        self.lineGroups = []
 
         self.highlightedItems = set()
         self.highlightedRings = set()
@@ -79,12 +81,21 @@ class StarPlot(VisWidget):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        self.scene.setBackgroundBrush(self.bgColor)
-
         self.setDragMode(QGraphicsView.RubberBandDrag)
 
         self.rubberBandChanged.connect(self.selectData)
         self.setCacheMode(QGraphicsView.CacheBackground)
+
+        self.colorDialog = QColorDialog()
+
+    @property
+    def bgColor(self):
+        return self.__bgColor
+
+    @bgColor.setter
+    def bgColor(self, color):
+        self.__bgColor = color
+        self.scene.setBackgroundBrush(self.__bgColor)
 
     def getClassColor(self, cls):
         if self.plotPalette is None:
@@ -165,6 +176,13 @@ class StarPlot(VisWidget):
             numDims = len(lines)
             for i, l in enumerate(lines):
                 l.p2 = lines[i + 1 if i + 1 < numDims else 0].p1
+
+    def mouseDoubleClickEvent(self, evenz):
+        self.colorDialog.setCurrentColor(self.bgColor)
+        self.colorDialog.open(self._setBackgroundColor)
+
+    def _setBackgroundColor(self):
+        self.bgColor = self.sender().currentColor()
 
     def resizeEvent(self, event):
         self.setUpdatesEnabled(False)
