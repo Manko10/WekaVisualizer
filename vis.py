@@ -1,8 +1,9 @@
-from PyQt5.QtGui import QPainter, QColor, QTransform, QFont, QFontMetrics, QPen, QPolygon, QDrag, QCursor, QVector2D
-from PyQt5.QtCore import QSize, QPoint, QPointF, QLineF, QRect, QRectF, Qt, QSizeF, QTimer, pyqtSignal
+from PyQt5.QtGui import QPainter, QColor, QTransform, QFont, QPen, QCursor, QVector2D
+from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from data import Relation
-import abc, math
+import abc
+import math
 
 
 class VisWidget(QGraphicsView):
@@ -162,7 +163,7 @@ class StarPlot(VisWidget):
     def minimumSizeHint(self):
         return QSize(400, 400)
 
-    class PlotAxis(QGraphicsItem):
+    class PlotAxis(QGraphicsObject):
         ItemAxisLenHasChanged = 0x9901
 
         def __init__(self, view):
@@ -193,7 +194,40 @@ class StarPlot(VisWidget):
             self.__origRotation = self.rotation()
             self.__dragActive = False
 
+            self.axisAnimation = QPropertyAnimation(self, b"relativeRotation")
+            self.axisAnimation.setDuration(600)
+            self.axisAnimation.setEasingCurve(QEasingCurve.InOutQuad)
+            self.__relRotationStartValue = 0
+
             self.view.canvasAreaChanged.connect(self.updateCanvasGeometry)
+
+        def initRelativeRotation(self):
+            """
+            When animating rotation using the L{relativeRotation}, call this method before
+            starting the animation. Otherwise relative angles will be added up resulting in a much
+            larger rotation than intended.
+            """
+            self.__relRotationStartValue = self.rotation()
+
+        @pyqtProperty(float)
+        def relativeRotation(self):
+            """
+            Q_PROPERTY for animating relative rotations. Fix the initial rotation first using
+            L{initRelativeRotation()} before starting the animation.
+
+            @return: current rotation
+            """
+            return self.rotation()
+
+        @relativeRotation.setter
+        def relativeRotation(self, rot):
+            """
+            Q_PROPERTY for animating relative rotations. Fix the initial rotation first using
+            L{initRelativeRotation()} before starting the animation.
+
+            @return: current rotation
+            """
+            self.setRotation((self.__relRotationStartValue + rot) % 360)
 
         def hoverEnterEvent(self, event):
             self.axesPen.setWidth(self.axesWidthHighl)
@@ -249,13 +283,31 @@ class StarPlot(VisWidget):
                     r = a.rotation()
                     relAngle = (r + angleModifier) % 360
                     if clockwise and relAngle - relOwnAngle < 0:
-                        a.setRotation((r - angleDiff) % 360)
+                        a.axisAnimation.setStartValue(0)
+                        a.axisAnimation.setEndValue(-angleDiff)
+                        a.initRelativeRotation()
+                        a.axisAnimation.start()
                         numSteps += 1
                     elif not clockwise and relAngle - relOwnAngle > 0:
-                        a.setRotation((r + angleDiff) % 360)
+                        a.axisAnimation.setStartValue(0)
+                        a.axisAnimation.setEndValue(angleDiff)
+                        a.initRelativeRotation()
+                        a.axisAnimation.start()
                         numSteps -= 1
-                self.setRotation((self.__origRotation + numSteps * angleDiff) % 360)
-                self.__origRotation = self.rotation()
+
+                newRot = (self.__origRotation + (numSteps * angleDiff)) % 360
+                relRotation = newRot - self.rotation()
+                # make sure we don't rotate a full circle when crossing 0°
+                if relRotation < -180:
+                    relRotation %= 360
+
+                self.axisAnimation.setStartValue(0)
+                self.axisAnimation.setEndValue(relRotation)
+                self.initRelativeRotation()
+                self.axisAnimation.start()
+                self.__origRotation = newRot
+
+                # redraw all lines between points of neighboring axes
                 self.view.reparentLines()
             self.__dragActive = False
 
