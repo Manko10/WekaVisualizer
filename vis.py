@@ -81,9 +81,10 @@ class StarPlot(VisWidget):
         self.setCacheMode(QGraphicsView.CacheBackground)
 
     def getClassColor(self, cls):
-        if self._colorPalette is None:
+        if self.plotPalette is None:
             return QColor()
-        return self._colorPalette.get(cls, QColor())
+
+        return self.plotPalette.get(cls, QColor())
 
     def updateWidget(self):
         if self.relation is None:
@@ -361,7 +362,6 @@ class StarPlot(VisWidget):
             pRot = p.rotation()
             trans = QTransform()
             trans.rotate(-p.rotation())
-            self.setPos(0, 0)
 
             p2Scene = p.mapToScene(p.p2)
             if 0 <= pRot < 90:
@@ -386,6 +386,8 @@ class StarPlot(VisWidget):
             self.__axisLen = 0
             self.__boundingRect = None
 
+            self._pen = QPen(self.view.getClassColor(self.cls))
+
             view.axisChanged.connect(self.updateAxisLen)
 
         def updateAxisLen(self):
@@ -393,12 +395,7 @@ class StarPlot(VisWidget):
             self.__boundingRect = QRectF(QPoint(self.val * self.__axisLen - 2, -2), QPoint(self.val * self.__axisLen + 2, 2))
 
         def paint(self, qp: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget = None):
-            # TODO: don't hardcode
-            pen = QPen(QColor(0, 0, 255, 80))
-            if "1" == self.cls:
-                pen = QPen(QColor(255, 0, 0, 80))
-            pen.setWidth(1)
-            qp.setPen(pen)
+            qp.setPen(self._pen)
             qp.drawRect(self.boundingRect())
 
         def boundingRect(self):
@@ -414,14 +411,16 @@ class StarPlot(VisWidget):
             self.cls = p1.cls
             self.view = view
             self.highlighted = False
+            self.lineWidth = 1
+            self.lineWidthHighl = 4
 
-            # TODO: don't hardcode
-            self.__pen1 = (QPen(QColor(255, 0, 0, 80)), QPen(QColor(255, 0, 0, 200)))
-            self.__pen1[0].setWidth(1)
-            self.__pen1[1].setWidth(3)
-            self.__pen2 = (QPen(QColor(0, 0, 255, 80)),  QPen(QColor(0, 0, 255, 200)))
-            self.__pen2[0].setWidth(1)
-            self.__pen2[1].setWidth(3)
+            color = self.view.getClassColor(self.cls)
+            self._pen = QPen(color)
+            self._pen.setWidth(self.lineWidth)
+            colorHighl = QColor(color)
+            colorHighl.setAlpha(255)
+            self._penHighl = QPen(colorHighl)
+            self._penHighl.setWidth(self.lineWidthHighl)
 
             self.updateLine()
             view.axisChanged.connect(self.updateLine)
@@ -432,9 +431,6 @@ class StarPlot(VisWidget):
             self.setLine(QLineF(p1, p2))
 
         def paint(self, qp: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget = None):
-            if self.cls == "1":
-                self.setPen(self.__pen1[int(self.highlighted)])
-            else:
-                self.setPen(self.__pen2[int(self.highlighted)])
+            self.setPen(self._pen if not self.highlighted else self._penHighl)
             super().paint(qp, option, widget)
 

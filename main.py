@@ -12,14 +12,14 @@ from vis import StarPlot
 
 class WekaVisualizer(QWidget):
     defaultPalette = [
-        QColor(255, 30, 0, 80),
-        QColor(61, 28, 227, 80),
-        QColor(255, 205, 0, 80),
-        QColor(0, 232, 61, 80),
-        QColor(240, 63, 40, 80),
-        QColor(65, 45, 166, 80),
-        QColor(240, 200, 40, 80),
-        QColor(30, 179, 69, 80)
+        QColor(255, 30, 0, 100),
+        QColor(61, 28, 227, 100),
+        QColor(255, 205, 0, 100),
+        QColor(0, 232, 61, 100),
+        QColor(240, 63, 40, 100),
+        QColor(65, 45, 166, 100),
+        QColor(240, 200, 40, 100),
+        QColor(30, 179, 69, 100)
     ]
 
     def __init__(self):
@@ -84,11 +84,12 @@ class WekaVisualizer(QWidget):
             checkBox.stateChanged.connect(self.toggleClassState)
             hbox.addWidget(checkBox)
 
-            swatch = QPushButton(" ")
+            swatch = QPushButton()
             swatch.setObjectName("swatch_class" + str(i))
             swatch.setFocusPolicy(Qt.NoFocus)
             swatch.setFixedSize(QSize(30, 30))
             swatch.clicked.connect(self.selectClassColor)
+            swatch.dataClassLabel = c
             pal = swatch.palette()
             color = self.defaultPalette[i % len(self.defaultPalette)]
             pal.setColor(QPalette.Button, color)
@@ -127,9 +128,10 @@ class WekaVisualizer(QWidget):
             pal.setColor(QPalette.Button, color)
             self.activeSwatch.setPalette(pal)
 
-            className = self.activeSwatch.objectName()[12:]
+            className = self.activeSwatch.dataClassLabel
             self._plotPalette[className] = color
             self.plot.setPlotPalette(self._plotPalette)
+            print(className)
 
     def center(self):
         qr = self.frameGeometry()
