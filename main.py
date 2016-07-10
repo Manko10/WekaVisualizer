@@ -8,6 +8,7 @@ from PyQt5.QtCore import Qt, QSize
 import os.path
 import data
 from vis import StarPlot
+from data import Relation
 
 
 class WekaVisualizer(QWidget):
@@ -75,6 +76,7 @@ class WekaVisualizer(QWidget):
 
         self._addPlotControls()
         self._addPlotSelectionStats()
+        self._addOptions()
 
     def _addPlotControls(self):
         # classes selector
@@ -120,6 +122,21 @@ class WekaVisualizer(QWidget):
         self.plot.setPlotPalette(self._plotPalette)
         self.dynamicControlLayout.addWidget(groupClasses)
 
+    def toggleClassState(self, state):
+        s = self.sender()
+        p = s.parent()
+        name = s.objectName()
+        state = (state != Qt.Unchecked)
+        p.findChild(QWidget, "swatch_" + name).setEnabled(state)
+        p.findChild(QWidget, "label_" + name).setEnabled(state)
+
+        if state:
+            self.plot.relation.setClassFilter(self.plot.relation.activeClasses | {s.dataClassLabel})
+        else:
+            self.plot.relation.setClassFilter(self.plot.relation.activeClasses - {s.dataClassLabel})
+
+        self.updateSelectionStats()
+
     def _addPlotSelectionStats(self):
         self.selectionStatBars.clear()
 
@@ -159,20 +176,26 @@ class WekaVisualizer(QWidget):
             pal.setColor(QPalette.Highlight, self._plotPalette[b.dataClassLabel])
             b.setPalette(pal)
 
-    def toggleClassState(self, state):
-        s = self.sender()
-        p = s.parent()
-        name = s.objectName()
-        state = (state != Qt.Unchecked)
-        p.findChild(QWidget, "swatch_" + name).setEnabled(state)
-        p.findChild(QWidget, "label_" + name).setEnabled(state)
+    def _addOptions(self):
+        groupOpts = QGroupBox(self.tr("Options"))
+        optsVBox = QVBoxLayout()
+        groupOpts.setLayout(optsVBox)
 
-        if state:
-            self.plot.relation.setClassFilter(self.plot.relation.activeClasses | {s.dataClassLabel})
-        else:
-            self.plot.relation.setClassFilter(self.plot.relation.activeClasses - {s.dataClassLabel})
+        scaleHBox = QHBoxLayout()
+        scaleHBox.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        scaleOpt = QCheckBox()
+        scaleOpt.setChecked(True)
+        scaleOpt.stateChanged.connect(self.toggleScaleMode)
+        scaleLabel = QLabel(self.tr("&Scale features"))
+        scaleLabel.setBuddy(scaleOpt)
+        scaleHBox.addWidget(scaleOpt)
+        scaleHBox.addWidget(scaleLabel)
+        optsVBox.addLayout(scaleHBox)
 
-        self.updateSelectionStats()
+        self.dynamicControlLayout.addWidget(groupOpts)
+
+    def toggleScaleMode(self, state):
+        self.plot.relation.setScaleMode(Relation.ScaleModeLocal if state != Qt.Unchecked else Relation.ScaleModeGlobal)
 
     def selectClassColor(self):
         s = self.sender()

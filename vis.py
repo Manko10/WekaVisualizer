@@ -137,7 +137,7 @@ class StarPlot(VisWidget):
 
     def addPoints(self):
         numDims = len(self.relation.fieldNames) - 1
-        datasets = self.relation.getNormalizedDatasets()
+        datasets = self.relation.getScaledDatasets()
         for ds in datasets:
             points = []
             lines = []

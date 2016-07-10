@@ -54,6 +54,9 @@ class RelationFactory(object):
 class Relation(QObject):
     dataChanged = pyqtSignal()
 
+    ScaleModeGlobal = 0
+    ScaleModeLocal  = 2
+
     def __init__(self):
         super().__init__()
 
@@ -66,7 +69,8 @@ class Relation(QObject):
         self.allClasses         = set()
         self.activeClasses      = set()
 
-        self.__normed_datasets = None
+        self.__scaled_datasets = None
+        self.__scale_mode       = self.ScaleModeLocal
 
         self.__minVals = None
         self.__maxVals = None
@@ -137,21 +141,31 @@ class Relation(QObject):
             self.__datasets = list(self.__datasets)
 
         self.activeClasses = set(self.allClasses)
-        self.__normed_datasets = None
+        self.__scaled_datasets = None
 
         self.dataChanged.emit()
 
     def setClassFilter(self, includeClasses):
         self.__datasets = [d for d in self.__datasetsAll if d[-1] in includeClasses]
-        self.__normed_datasets = None
+        self.__scaled_datasets = None
         self.activeClasses = includeClasses
         self.dataChanged.emit()
 
-    def getNormalizedDatasets(self, normGlobally=False, minOffset=.1, maxOffset=.1):
-        if self.__normed_datasets is None:
-            self.__normed_datasets = []
+    def setScaleMode(self, mode):
+        """
+        Set axis normalization/scaling mode
+        @param mode: mode, L{ScaleModeLocal} or L{ScaleModeGlobal}
+        """
+        if mode != self.__scale_mode and mode in (self.ScaleModeGlobal, self.ScaleModeLocal):
+            self.__scale_mode = mode
+            self.__scaled_datasets = None
+            self.dataChanged.emit()
 
-            if normGlobally:
+    def getScaledDatasets(self, minOffset=.1, maxOffset=.1):
+        if self.__scaled_datasets is None:
+            self.__scaled_datasets = []
+
+            if self.__scale_mode == self.ScaleModeGlobal:
                 minVals = [min(self.minVals())] * len(self.fieldNames)
                 maxVals = [max(self.maxVals())] * len(self.fieldNames)
             else:
@@ -162,5 +176,6 @@ class Relation(QObject):
             maxVals = [x + x * maxOffset for x in maxVals]
 
             for ds in self.datasets:
-                self.__normed_datasets.append([(x - minVals[i]) / (maxVals[i] - minVals[i]) if type(x) == float else x for i, x in enumerate(ds)])
-        return self.__normed_datasets
+                self.__scaled_datasets.append([(x - minVals[i]) / (maxVals[i] - minVals[i]) if type(x) == float else x for i, x in enumerate(ds)])
+
+        return self.__scaled_datasets
