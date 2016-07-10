@@ -38,6 +38,8 @@ class WekaVisualizer(QWidget):
 
         self.activeSwatch = None
 
+        self.selectionStatBars = []
+
         self.initUI()
 
     def initUI(self):
@@ -63,14 +65,18 @@ class WekaVisualizer(QWidget):
 
         # TODO: remove this convenience line
         self.plot.setRelation(data.RelationFactory.loadFromFile("/home/janek/University/SS 15/Visualization/VisProject/gutenberg.arff"))
-        self.addPlotControls()
+        self.addControlArea()
         self.plot.updateWidget()
 
-    def addPlotControls(self):
-        # clear layout
+    def addControlArea(self):
+        # clear layout first
         for i in reversed(range(self.dynamicControlLayout.count())):
             self.dynamicControlLayout.itemAt(i).widget().setParent(None)
 
+        self._addPlotControls()
+        self._addPlotSelectionStats()
+
+    def _addPlotControls(self):
         # classes selector
         groupClasses = QGroupBox(self.tr("Classes"))
         classesVBox = QVBoxLayout()
@@ -110,6 +116,45 @@ class WekaVisualizer(QWidget):
         self.plot.setPlotPalette(self._plotPalette)
         self.dynamicControlLayout.addWidget(groupClasses)
 
+    def _addPlotSelectionStats(self):
+        self.selectionStatBars.clear()
+
+        groupStats = QGroupBox(self.tr("Selection by Class"))
+        statsVBox = QVBoxLayout()
+        groupStats.setLayout(statsVBox)
+
+        for c in self.plot.relation.allClasses:
+            bar = QProgressBar()
+            bar.dataClassLabel = c
+            bar.setTextVisible(True)
+            bar.setValue(0)
+            self.selectionStatBars.append(bar)
+
+            label = QLabel(c)
+            label.setBuddy(bar)
+
+            vbox = QVBoxLayout()
+            vbox.addWidget(label)
+            vbox.addWidget(bar)
+            statsVBox.addLayout(vbox)
+
+        self.plot.selectionChanged.connect(self.updateSelectionStats)
+        self.updateSelectionStats()
+        self.dynamicControlLayout.addWidget(groupStats)
+
+    def updateSelectionStats(self):
+        highlightsPerClass = {}
+        for s in self.plot.highlightedRings:
+            highlightsPerClass[s.dataClassLabel] = highlightsPerClass.get(s.dataClassLabel, 0) + 1
+
+        for b in self.selectionStatBars:
+            num = self.plot.relation.numDatasetsForClass(b.dataClassLabel)
+            if 0 != num:
+                b.setValue(highlightsPerClass.get(b.dataClassLabel, 0) / num * 100)
+            pal = b.palette()
+            pal.setColor(QPalette.Highlight, self._plotPalette[b.dataClassLabel])
+            b.setPalette(pal)
+
     def toggleClassState(self, state):
         s = self.sender()
         p = s.parent()
@@ -122,6 +167,8 @@ class WekaVisualizer(QWidget):
             self.plot.relation.setClassFilter(self.plot.relation.activeClasses | {s.dataClassLabel})
         else:
             self.plot.relation.setClassFilter(self.plot.relation.activeClasses - {s.dataClassLabel})
+
+        self.updateSelectionStats()
 
     def selectClassColor(self):
         s = self.sender()
@@ -141,6 +188,8 @@ class WekaVisualizer(QWidget):
             self.plot.setPlotPalette(self._plotPalette)
             self.plot.updateWidget()
 
+            self.updateSelectionStats()
+
     def center(self):
         qr = self.frameGeometry()
         cp = QDesktopWidget().availableGeometry().center()
@@ -152,7 +201,7 @@ class WekaVisualizer(QWidget):
                                                "", self.tr("WEKA Files (*.arff)"))
         if "" != fileName[0] and os.path.isfile(fileName[0]):
             self.plot.setRelation(data.RelationFactory.loadFromFile(fileName[0]))
-            self.addPlotControls()
+            self.addControlArea()
 
 
 # override excepthook to correctly show tracebacks in PyCharm

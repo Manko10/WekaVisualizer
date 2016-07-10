@@ -46,6 +46,7 @@ class StarPlot(VisWidget):
 
     canvasAreaChanged = pyqtSignal()
     axisChanged       = pyqtSignal()
+    selectionChanged  = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -63,7 +64,8 @@ class StarPlot(VisWidget):
         self.axisLabels        = []
         self.lineGroups        = []
 
-        self.highlightedItems = []
+        self.highlightedItems = set()
+        self.highlightedRings = set()
 
         # timer for delayed plot update on resize events
         self.resizeUpdateDelay = 150
@@ -99,6 +101,7 @@ class StarPlot(VisWidget):
 
         self.lineGroups.clear()
         self.highlightedItems.clear()
+        self.highlightedRings.clear()
         self.axisLabels.clear()
         self.axes.clear()
         self.scene.clear()
@@ -145,6 +148,7 @@ class StarPlot(VisWidget):
                     lines.append(self.PlotLine(self, p, points[0]))
 
             group = self.scene.createItemGroup(lines)
+            group.dataClassLabel = points[0].cls
             self.lineGroups.append(group)
 
     def reparentLines(self):
@@ -176,19 +180,28 @@ class StarPlot(VisWidget):
             for h in self.highlightedItems:
                 h.highlighted = False
             self.highlightedItems.clear()
+            self.highlightedRings.clear()
 
         sel = self.items(rubberBandRect)
         for s in sel:
             if type(s) == self.PlotLine:
-                siblings = s.parentItem().childItems()
-                for sib in siblings:
-                    if QApplication.keyboardModifiers() == Qt.ControlModifier:
+                parent = s.parentItem()
+                siblings = parent.childItems()
+
+                if QApplication.keyboardModifiers() == Qt.ControlModifier:
+                    for sib in siblings:
                         if sib in self.highlightedItems:
                             sib.highlighted = False
                             self.highlightedItems.remove(sib)
-                    else:
+                    if parent in self.highlightedRings:
+                        self.highlightedRings.remove(parent)
+                else:
+                    for sib in siblings:
                         sib.highlighted = True
-                        self.highlightedItems.append(sib)
+                        self.highlightedItems.add(sib)
+                    self.highlightedRings.add(parent)
+
+        self.selectionChanged.emit()
 
     def sizeHint(self):
         return QSize(1000, 1000)

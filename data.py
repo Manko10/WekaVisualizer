@@ -57,13 +57,14 @@ class Relation(QObject):
     def __init__(self):
         super().__init__()
 
-        self.relName         = ""
-        self.__fieldNames    = []
-        self.__fieldNamesAll = []
-        self.__datasets      = []
-        self.__datasetsAll   = []
-        self.allClasses      = set()
-        self.activeClasses   = set()
+        self.relName            = ""
+        self.__fieldNames       = []
+        self.__fieldNamesAll    = []
+        self.__datasets         = []
+        self.__datasetsAll      = []
+        self.__datasetsPerClass = {}
+        self.allClasses         = set()
+        self.activeClasses      = set()
 
         self.__normed_datasets = None
 
@@ -96,14 +97,19 @@ class Relation(QObject):
         """
         self.__datasetsAll = datasets
         self.__datasets = list(datasets)
+        for ds in self.__datasetsAll:
+            self.__datasetsPerClass[ds[-1]] = self.__datasetsPerClass.get(ds[-1], 0) + 1
         self.dataChanged.emit()
 
-    def getMinVals(self):
+    def numDatasetsForClass(self, cls):
+        return self.__datasetsPerClass.get(cls, 0)
+
+    def minVals(self):
         if self.__minVals is None:
             self.__calcMinMaxVals()
         return self.__minVals
 
-    def getMaxVals(self):
+    def maxVals(self):
         if self.__maxVals is None:
             self.__calcMinMaxVals()
         return self.__maxVals
@@ -146,11 +152,11 @@ class Relation(QObject):
             self.__normed_datasets = []
 
             if normGlobally:
-                minVals = [min(self.getMinVals())] * len(self.fieldNames)
-                maxVals = [max(self.getMaxVals())] * len(self.fieldNames)
+                minVals = [min(self.minVals())] * len(self.fieldNames)
+                maxVals = [max(self.maxVals())] * len(self.fieldNames)
             else:
-                minVals = self.getMinVals()
-                maxVals = self.getMaxVals()
+                minVals = self.minVals()
+                maxVals = self.maxVals()
 
             minVals = [x - maxVals[i] * minOffset for i, x in enumerate(minVals)]
             maxVals = [x + x * maxOffset for x in maxVals]
