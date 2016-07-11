@@ -32,10 +32,13 @@ class RelationFactory(object):
 
             try:
                 relName = ""
-                fieldNames = []
-                fieldTypes = []
-                dataPart = False
-                datasets = []
+                fieldNames   = []
+                fieldTypes   = []
+                dataPart     = False
+                datasets     = []
+                classColName = None
+                skipCols     = []
+                skipCounter  = 0
                 for l in lines:
                     l = l.strip()
                     if "" == l or "%" == l[0]:
@@ -47,22 +50,39 @@ class RelationFactory(object):
                             if "@RELATION" == fields[0].upper():
                                 relName = fields[1]
                             elif "@ATTRIBUTE" == fields[0].upper():
-                                fieldNames.append(fields[1])
                                 if "NUMERIC" == fields[2].upper():
                                     fieldTypes.append(float)
+                                    fieldNames.append(fields[1])
                                 else:
-                                    fieldTypes.append(str)
+                                    classColName = fields[1]
+                                    skipCols.append(skipCounter)
+                                    skipCounter += 1
                             elif "@DATA" == fields[0].upper():
-                                dataPart = True
-                                rel.relName = relName
-                                rel.fieldNames = fieldNames
+                                if len(fieldNames) != 0:
+                                    if classColName is None:
+                                        # class column is numeric, but we need a string
+                                        classColName = fieldNames[-1]
+                                        fieldTypes[-1] = str
+                                    else:
+                                        skipCols.pop()  # last column is class column, don't skip it
+                                        fieldNames.append(classColName)
+                                        fieldTypes.append(str)
+                                    dataPart = True
+                                    rel.relName = relName
+                                    rel.fieldNames = fieldNames
                     elif dataPart:
-                        fields = re.split(",", l.strip())
+                        fieldsTmp = re.split(",", l.strip())
+                        fields = []
+                        for i, f_ in enumerate(fieldsTmp):
+                            if i not in skipCols:
+                                fields.append(f_)
+
                         for i, t in enumerate(fieldTypes):
                             fields[i] = t(fields[i])
 
-                        rel.allClasses.add(fields[-1])
-                        datasets.append(fields)
+                        if len(fields) > 1:
+                            rel.allClasses.add(fields[-1])
+                            datasets.append(fields)
                 rel.datasets = datasets
                 rel.activeClasses = set(rel.allClasses)
             except:

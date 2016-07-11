@@ -85,9 +85,9 @@ class WekaVisualizer(QWidget):
         self.show()
 
         # TODO: remove this convenience line
-        self.plot.setRelation(data.RelationFactory.loadFromFile("/home/janek/University/SS 15/Visualization/VisProject/gutenberg.arff"))
-        self.addControlArea()
-        self.plot.updateWidget()
+        #self.plot.setRelation(data.RelationFactory.loadFromFile("/home/janek/webis/code-in-progress/webisstud/wstud-thesis-bevendorff/pan-av-evaluation/weka-3-6-13/data/breast-cancer.arff"))
+        #self.addControlArea()
+        #self.plot.updateWidget()
 
     def addControlArea(self):
         # clear layout first
@@ -248,7 +248,17 @@ class WekaVisualizer(QWidget):
         fileName = QFileDialog.getOpenFileName(self, self.tr("Select WEKA ARFF file"),
                                                "", self.tr("WEKA Files (*.arff)"))
         if "" != fileName[0] and os.path.isfile(fileName[0]):
-            self.plot.setRelation(data.RelationFactory.loadFromFile(fileName[0]))
+            try:
+                rel = data.RelationFactory.loadFromFile(fileName[0])
+                if len(rel.fieldNames) == 0:
+                    raise Exception("No fields")
+            except:
+                QMessageBox.critical(self, self.tr("Input file error"),
+                                     self.tr("The specified input file is either not a valid WEKA ARFF file or "
+                                             "does not contain any NUMERIC columns"), QMessageBox.Ok)
+                return
+
+            self.plot.setRelation(rel)
             self.addControlArea()
             self.plot.updateWidget()
 
