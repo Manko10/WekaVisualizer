@@ -84,11 +84,6 @@ class WekaVisualizer(QWidget):
 
         self.show()
 
-        # TODO: remove this convenience line
-        #self.plot.setRelation(data.RelationFactory.loadFromFile("/home/janek/webis/code-in-progress/webisstud/wstud-thesis-bevendorff/pan-av-evaluation/weka-3-6-13/data/breast-cancer.arff"))
-        #self.addControlArea()
-        #self.plot.updateWidget()
-
     def addControlArea(self):
         # clear layout first
         for i in reversed(range(self.dynamicControlLayout.count())):
