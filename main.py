@@ -23,7 +23,7 @@
 import sys
 from traceback import print_exception
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QColor, QPalette
+from PyQt5.QtGui import QColor, QPalette, QFontMetrics
 from PyQt5.QtCore import Qt, QSize
 import os.path
 import data
@@ -118,11 +118,9 @@ class WekaVisualizer(QWidget):
             swatch.setFocusPolicy(Qt.NoFocus)
             swatch.setFixedSize(QSize(30, 30))
             swatch.clicked.connect(self.selectClassColor)
-            pal = swatch.palette()
             color = self.defaultPalette[i % len(self.defaultPalette)]
-            pal.setColor(QPalette.Button, color)
             self._plotPalette[c] = color
-            swatch.setPalette(pal)
+            self._setSwatchColor(swatch, color)
             hbox.addWidget(swatch)
 
             label = QLabel(c)
@@ -136,6 +134,14 @@ class WekaVisualizer(QWidget):
 
         self.plot.setPlotPalette(self._plotPalette)
         self.dynamicControlLayout.addWidget(groupClasses)
+
+    def _setSwatchColor(self, swatch, color):
+        pal = swatch.palette()
+        pal.setColor(QPalette.Button, color)
+        swatch.setPalette(pal)
+        swatch.setStyleSheet("background-color: rgba({}, {},{},{}); border: 1px solid lightgray; border-radius: 2px".format(
+            color.red(), color.green(), color.blue(), color.alpha()
+        ))
 
     def toggleClassState(self, state):
         s = self.sender()
@@ -187,9 +193,16 @@ class WekaVisualizer(QWidget):
             num = self.plot.relation.numDatasetsForClass(b.dataClassLabel)
             if 0 != num:
                 b.setValue(highlightsPerClass.get(b.dataClassLabel, 0) / num * 100)
+            color = self._plotPalette[b.dataClassLabel]
             pal = b.palette()
-            pal.setColor(QPalette.Highlight, self._plotPalette[b.dataClassLabel])
+            pal.setColor(QPalette.Highlight, color)
             b.setPalette(pal)
+            margin = QFontMetrics(b.font()).width("100%") + 5
+            # thank you Windows, for letting me re-style the full progress bar instead of just using the palette color!!
+            b.setStyleSheet("QProgressBar {{ text-align: right; border: 1px solid lightgray;"
+                            "background:none; border-radius: 2px; margin-right: {}px; }}"
+                            "QProgressBar::chunk {{ background-color: rgba({}, {}, {}, {});  }}".format(
+                margin, color.red(), color.green(), color.blue(), color.alpha()))
 
     def _addOptions(self):
         groupOpts = QGroupBox(self.tr("Options"))
@@ -222,9 +235,7 @@ class WekaVisualizer(QWidget):
     def setNewClassColor(self):
         color = self.sender().currentColor()
         if self.activeSwatch is not None:
-            pal = self.activeSwatch.palette()
-            pal.setColor(QPalette.Button, color)
-            self.activeSwatch.setPalette(pal)
+            self._setSwatchColor(self.activeSwatch, color)
 
             className = self.activeSwatch.dataClassLabel
             self._plotPalette[className] = color
