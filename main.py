@@ -152,11 +152,11 @@ class WekaVisualizer(QWidget):
         p.findChild(QWidget, "label_" + name).setEnabled(state)
 
         if state:
-            self.plot.relation.setClassFilter(self.plot.relation.activeClasses | {s.dataClassLabel})
+            #self.plot.relation.setClassFilter(self.plot.relation.activeClasses | {s.dataClassLabel})
+            self.plot.filterClasses(self.plot.activeClasses  | {s.dataClassLabel})
         else:
-            self.plot.relation.setClassFilter(self.plot.relation.activeClasses - {s.dataClassLabel})
-
-        self.updateSelectionStats()
+            #self.plot.relation.setClassFilter(self.plot.relation.activeClasses - {s.dataClassLabel})
+            self.plot.filterClasses(self.plot.activeClasses  - {s.dataClassLabel})
 
     def _addPlotSelectionStats(self):
         self.selectionStatBars.clear()

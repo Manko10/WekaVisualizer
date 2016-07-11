@@ -22,6 +22,7 @@ from PyQt5.QtGui import QPainter, QColor, QTransform, QFont, QPen, QCursor, QVec
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from vis.VisWidget import VisWidget
+from data import Relation
 import math
 
 
@@ -54,6 +55,7 @@ class StarPlot(VisWidget):
 
         self.highlightedItems = set()
         self.highlightedRings = set()
+        self.activeClasses    = set()
 
         # timer for delayed plot update on resize events
         self.resizeUpdateDelay = 150
@@ -88,6 +90,10 @@ class StarPlot(VisWidget):
             return QColor()
 
         return self.plotPalette[cls]
+
+    def setRelation(self, rel: Relation):
+        super().setRelation(rel)
+        self.activeClasses = self.relation.activeClasses
 
     def updateWidget(self):
         self.setUpdatesEnabled(False)
@@ -163,6 +169,20 @@ class StarPlot(VisWidget):
             numDims = len(lines)
             for i, l in enumerate(lines):
                 l.p2 = lines[i + 1 if i + 1 < numDims else 0].p1
+
+    def filterClasses(self, classes):
+        """
+        Filter classes without reloading the dataset.
+        L{StarPlot.activeClasses} contains all currently active classes.
+
+        @param classes class names to filter by
+        """
+        items = self.scene.items()
+        for i in items:
+            if type(i) == PlotLine or type(i) == PlotPoint:
+                i.setVisible(i.cls in classes)
+
+        self.activeClasses = classes
 
     def mouseDoubleClickEvent(self, event):
         self.colorDialog.setCurrentColor(self.bgColor)

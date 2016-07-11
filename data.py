@@ -199,6 +199,13 @@ class Relation(QObject):
         self.dataChanged.emit()
 
     def setClassFilter(self, includeClasses):
+        """
+        Filter data by given class names.
+        This method is kept here for preservation, but is basically obsolete. Filtering is done by toggling the
+        visibility state of the drawn graphics items.
+
+        @param includeClasses: class names to filter by
+        """
         self.__datasets = [d for d in self.__datasetsAll if d[-1] in includeClasses]
         self.__scaled_datasets = None
         self.activeClasses = includeClasses
