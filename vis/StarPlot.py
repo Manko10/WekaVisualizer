@@ -95,10 +95,11 @@ class StarPlot(VisWidget):
         if self.relation is None:
             return
 
-        # save axis rotations
+        # save axis rotations, but only if we don't have a new dataset with a different number of axes
         self.axisAngles.clear()
-        for a in self.axes:
-            self.axisAngles.append(a.rotation())
+        if len(self.axes) == len(self.relation.fieldNames) - 1:
+            for a in self.axes:
+                self.axisAngles.append(a.rotation())
 
         self.lineGroups.clear()
         self.highlightedItems.clear()
