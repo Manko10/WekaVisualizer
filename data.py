@@ -56,7 +56,7 @@ class RelationFactory(object):
                                 else:
                                     classColName = fields[1]
                                     skipCols.append(skipCounter)
-                                    skipCounter += 1
+                                skipCounter += 1
                             elif "@DATA" == fields[0].upper():
                                 if len(fieldNames) != 0:
                                     if classColName is None:
@@ -85,7 +85,7 @@ class RelationFactory(object):
                             datasets.append(fields)
                 rel.datasets = datasets
                 rel.activeClasses = set(rel.allClasses)
-            except:
+            except Exception as e:
                 raise Exception("ARFF parsing error!")
 
         return rel
