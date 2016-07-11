@@ -150,17 +150,12 @@ class StarPlot(VisWidget):
             for i in range(numDims):
                 p = PlotPoint(self, ds[i], ds[-1])
                 p.setParentItem(self.axes[i])
-                self.plotPaletteChanged.connect(p.updateColor)
                 points.append(p)
 
                 if 0 < i:
-                    line = PlotLine(self, points[i - 1], p)
-                    self.plotPaletteChanged.connect(line.updateColor)
-                    lines.append(line)
+                    lines.append(PlotLine(self, points[i - 1], p))
                 if i == numDims - 1:
-                    line = PlotLine(self, p, points[0])
-                    self.plotPaletteChanged.connect(line.updateColor)
-                    lines.append(line)
+                    lines.append(PlotLine(self, p, points[0]))
 
             group = self.scene.createItemGroup(lines)
             group.dataClassLabel = points[0].cls
@@ -457,6 +452,7 @@ class PlotPoint(QGraphicsItem):
         self._pen = None
 
         self.updateColor()
+        view.plotPaletteChanged.connect(self.updateColor)
         view.axisChanged.connect(self.updateAxisLen)
 
     def updateColor(self):
@@ -491,6 +487,7 @@ class PlotLine(QGraphicsLineItem):
 
         self.updateColor()
         self.updateLine()
+        view.plotPaletteChanged.connect(self.updateColor)
         view.axisChanged.connect(self.updateLine)
 
     def updateColor(self):
