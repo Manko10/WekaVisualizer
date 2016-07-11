@@ -6,6 +6,8 @@ Running the program:
 
     python3 ./main.py
 
+On Windows you can use the `main_win.pyw` file to run the program without showing a console window.
+
 ---
 
 ## LICENSE:
