@@ -150,12 +150,17 @@ class StarPlot(VisWidget):
             for i in range(numDims):
                 p = PlotPoint(self, ds[i], ds[-1])
                 p.setParentItem(self.axes[i])
+                self.plotPaletteChanged.connect(p.updateColor)
                 points.append(p)
 
                 if 0 < i:
-                    lines.append(PlotLine(self, points[i - 1], p))
+                    line = PlotLine(self, points[i - 1], p)
+                    self.plotPaletteChanged.connect(line.updateColor)
+                    lines.append(line)
                 if i == numDims - 1:
-                    lines.append(PlotLine(self, p, points[0]))
+                    line = PlotLine(self, p, points[0])
+                    self.plotPaletteChanged.connect(line.updateColor)
+                    lines.append(line)
 
             group = self.scene.createItemGroup(lines)
             group.dataClassLabel = points[0].cls
@@ -449,9 +454,13 @@ class PlotPoint(QGraphicsItem):
         self.__axisLen = 0
         self.__boundingRect = None
 
-        self._pen = QPen(self.view.getClassColor(self.cls))
+        self._pen = None
 
+        self.updateColor()
         view.axisChanged.connect(self.updateAxisLen)
+
+    def updateColor(self):
+        self._pen = QPen(self.view.getClassColor(self.cls))
 
     def updateAxisLen(self):
         self.__axisLen = self.parentItem().boundingRect().width()
@@ -468,7 +477,7 @@ class PlotPoint(QGraphicsItem):
 
 
 class PlotLine(QGraphicsLineItem):
-    def __init__(self,  view, p1, p2):
+    def __init__(self, view, p1, p2):
         super().__init__()
         self.p1 = p1
         self.p2 = p2
@@ -477,7 +486,14 @@ class PlotLine(QGraphicsLineItem):
         self.highlighted = False
         self.lineWidth = 1
         self.lineWidthHighl = 4
+        self._pen = None
+        self._penHighl = None
 
+        self.updateColor()
+        self.updateLine()
+        view.axisChanged.connect(self.updateLine)
+
+    def updateColor(self):
         color = self.view.getClassColor(self.cls)
         self._pen = QPen(color)
         self._pen.setWidth(self.lineWidth)
@@ -485,9 +501,6 @@ class PlotLine(QGraphicsLineItem):
         colorHighl.setAlpha(255)
         self._penHighl = QPen(colorHighl)
         self._penHighl.setWidth(self.lineWidthHighl)
-
-        self.updateLine()
-        view.axisChanged.connect(self.updateLine)
 
     def updateLine(self):
         p1 = self.p1.mapToScene(self.p1.boundingRect().center())

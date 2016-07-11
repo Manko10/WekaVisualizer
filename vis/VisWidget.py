@@ -18,6 +18,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene
 from PyQt5.QtGui import QPainter
 from data import Relation
@@ -25,6 +26,8 @@ from abc import abstractmethod
 
 
 class VisWidget(QGraphicsView):
+    plotPaletteChanged = pyqtSignal()
+
     def __init__(self):
         self.scene = QGraphicsScene()
         super().__init__(self.scene)
@@ -47,6 +50,7 @@ class VisWidget(QGraphicsView):
         @param paletteDict: dict with class names as keys and L{QColor} objects as values
         """
         self.plotPalette = paletteDict
+        self.plotPaletteChanged.emit()
 
     @abstractmethod
     def updateWidget(self):
