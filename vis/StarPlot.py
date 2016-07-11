@@ -18,7 +18,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-from PyQt5.QtGui import QPainter, QColor, QTransform, QFont, QPen, QCursor, QVector2D
+from PyQt5.QtGui import QPainter, QColor, QTransform, QFont, QPen, QCursor, QVector2D, QFontMetrics
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from vis.VisWidget import VisWidget
@@ -231,9 +231,10 @@ class PlotAxis(QGraphicsObject):
         self.p1 = QPoint(0, 0)
         self.p2 = QPoint(0, 0)
 
-        self.padding = 30
-        self.__canvasW = view.rect().size().width() - self.padding
-        self.__canvasH = view.rect().size().height() - self.padding
+        self.paddingHoriz = 30
+        self.paddingVert  = 60 + QFontMetrics(self.view.labelFont).height() * 2
+        self.__canvasW = view.rect().size().width() - self.paddingHoriz
+        self.__canvasH = view.rect().size().height() - self.paddingVert
 
         self.axesColor = QColor(150, 150, 150)
         self.axesWidth = 1
@@ -369,8 +370,8 @@ class PlotAxis(QGraphicsObject):
 
     def updateCanvasGeometry(self):
         self.view.setUpdatesEnabled(False)
-        self.__canvasW = self.view.rect().size().width() - self.padding
-        self.__canvasH = self.view.rect().size().height() - self.padding
+        self.__canvasW = self.view.rect().size().width() - self.paddingHoriz
+        self.__canvasH = self.view.rect().size().height() - self.paddingVert
         self.__canvasMaxDim = min(self.__canvasW, self.__canvasH)
         lw = max(self.axesWidth, self.axesWidthHighl) / 2 + 4
         self.__boundingRect = QRectF(QPoint(0 - lw, 0 - lw), QPoint(self.__canvasMaxDim / 2 + lw, lw))
