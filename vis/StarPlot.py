@@ -37,7 +37,7 @@ class StarPlot(VisWidget):
     def __init__(self):
         super().__init__()
 
-        self.__bgColor = QColor(220, 220, 220)
+        self.__bgColor = QColor(255, 255, 255)
         self.scene.setBackgroundBrush(self.__bgColor)
 
         self.labelFont = QFont('Decorative', 8)
