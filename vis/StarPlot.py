@@ -86,7 +86,7 @@ class StarPlot(VisWidget):
         self.scene.setBackgroundBrush(self.__bgColor)
 
     def getClassColor(self, cls):
-        if self.plotPalette is None:
+        if self.plotPalette is None or cls not in self.plotPalette:
             return QColor()
 
         return self.plotPalette[cls]
