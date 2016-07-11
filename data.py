@@ -84,6 +84,7 @@ class RelationFactory(object):
                             rel.allClasses.add(fields[-1])
                             datasets.append(fields)
                 rel.datasets = datasets
+                rel.numDatasets = len(datasets)
                 rel.activeClasses = set(rel.allClasses)
             except:
                 raise Exception("ARFF parsing error!")
@@ -108,6 +109,7 @@ class Relation(QObject):
         self.__datasetsPerClass = {}
         self.allClasses         = set()
         self.activeClasses      = set()
+        self.numDatasets        = 0
 
         self.__scaled_datasets = None
         self.__scale_mode       = self.ScaleModeLocal

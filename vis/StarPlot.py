@@ -399,7 +399,8 @@ class PlotAxis(QGraphicsObject):
         self.view.setUpdatesEnabled(True)
 
     def itemChange(self, change, variant):
-        if change == self.ItemAxisLenHasChanged or change == QGraphicsItem.ItemRotationHasChanged:
+        if change == self.ItemAxisLenHasChanged or \
+                (change == QGraphicsItem.ItemRotationHasChanged and self.view.relation.numDatasets < 200):
             self.view.axisChanged.emit()
         return super().itemChange(change, variant)
 
