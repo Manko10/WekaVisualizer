@@ -50,7 +50,7 @@ class RelationFactory(object):
                             if "@RELATION" == fields[0].upper():
                                 relName = fields[1]
                             elif "@ATTRIBUTE" == fields[0].upper():
-                                if "NUMERIC" == fields[2].upper():
+                                if "NUMERIC" == fields[2].upper() or "REAL" == fields[2].upper():
                                     fieldTypes.append(float)
                                     fieldNames.append(fields[1])
                                 else:
@@ -85,7 +85,7 @@ class RelationFactory(object):
                             datasets.append(fields)
                 rel.datasets = datasets
                 rel.activeClasses = set(rel.allClasses)
-            except Exception as e:
+            except:
                 raise Exception("ARFF parsing error!")
 
         return rel
