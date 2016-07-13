@@ -39,7 +39,7 @@ class StarPlot(VisWidget):
         super().__init__()
 
         self.__bgColor = QColor(255, 255, 255)
-        self.scene.setBackgroundBrush(self.__bgColor)
+        self.scene().setBackgroundBrush(self.__bgColor)
 
         self.labelFont = QFont('Decorative', 8)
 
@@ -83,7 +83,7 @@ class StarPlot(VisWidget):
     @bgColor.setter
     def bgColor(self, color):
         self.__bgColor = color
-        self.scene.setBackgroundBrush(self.__bgColor)
+        self.scene().setBackgroundBrush(self.__bgColor)
 
     def getClassColor(self, cls):
         if self.plotPalette is None or cls not in self.plotPalette:
@@ -112,7 +112,7 @@ class StarPlot(VisWidget):
         self.highlightedRings.clear()
         self.axisLabels.clear()
         self.axes.clear()
-        self.scene.clear()
+        self.scene().clear()
 
         self.addAxes()
         self.addPoints()
@@ -128,7 +128,7 @@ class StarPlot(VisWidget):
         axisDomains = self.relation.axisDomains
         for i in range(numDims):
             axis = PlotAxis(self)
-            self.scene.addItem(axis)
+            self.scene().addItem(axis)
             if self.axisAngles and i < len(self.axisAngles):
                 axis.setRotation(self.axisAngles[i])
             else:
@@ -157,7 +157,7 @@ class StarPlot(VisWidget):
                 if i == numDims - 1:
                     lines.append(PlotLine(self, p, points[0]))
 
-            group = self.scene.createItemGroup(lines)
+            group = self.scene().createItemGroup(lines)
             group.dataClassLabel = points[0].cls
             self.lineGroups.append(group)
 
@@ -177,7 +177,7 @@ class StarPlot(VisWidget):
 
         @param classes class names to filter by
         """
-        items = self.scene.items()
+        items = self.scene().items()
         for i in items:
             if type(i) == PlotLine or type(i) == PlotPoint:
                 i.setVisible(i.cls in classes)
@@ -193,6 +193,7 @@ class StarPlot(VisWidget):
 
     def resizeEvent(self, event):
         self.setUpdatesEnabled(False)
+        super().resizeEvent(event)
         # center scene in viewport
         r = self.rect()
         t = QTransform()
@@ -400,7 +401,7 @@ class PlotAxis(QGraphicsObject):
 
     def itemChange(self, change, variant):
         if change == self.ItemAxisLenHasChanged or \
-                (change == QGraphicsItem.ItemRotationHasChanged and self.view.relation.numDatasets < 200):
+                (change == QGraphicsItem.ItemRotationHasChanged and self.view.relation.numDatasets < 400):
             self.view.axisChanged.emit()
         return super().itemChange(change, variant)
 

@@ -18,7 +18,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, QRectF, QPointF
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene
 from PyQt5.QtGui import QPainter
 from data import Relation
@@ -29,8 +29,8 @@ class VisWidget(QGraphicsView):
     plotPaletteChanged = pyqtSignal()
 
     def __init__(self):
-        self.scene = QGraphicsScene()
-        super().__init__(self.scene)
+        super().__init__()
+        self.setScene(QGraphicsScene())
         self.relation = None
         self.plotPalette = None
         self.setRenderHint(QPainter.Antialiasing)
@@ -51,6 +51,12 @@ class VisWidget(QGraphicsView):
         """
         self.plotPalette = paletteDict
         self.plotPaletteChanged.emit()
+
+    def resizeEvent(self, event):
+        if self.scene():
+            s = event.size()
+            self.scene().setSceneRect(QRectF(QPointF(0, 0), QPointF(s.width(), s.height())))
+        super().resizeEvent(event)
 
     @abstractmethod
     def updateWidget(self):
