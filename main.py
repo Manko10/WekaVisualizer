@@ -23,8 +23,8 @@
 import sys
 from traceback import print_exception
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QColor, QPalette, QFontMetrics
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtGui import QColor, QPalette, QFontMetrics, QImage, QPainter
+from PyQt5.QtCore import Qt, QSize, QPointF
 import os.path
 import data
 from vis import StarPlot
@@ -223,6 +223,11 @@ class WekaVisualizer(QWidget):
 
         self.dynamicControlLayout.addWidget(groupOpts)
 
+        # save button
+        saveButton = QPushButton(self.tr("Save image"))
+        saveButton.clicked.connect(self.saveImage)
+        self.dynamicControlLayout.addWidget(saveButton)
+
     def toggleScaleMode(self, state):
         self.plot.relation.setScaleMode(Relation.ScaleModeLocal if state != Qt.Unchecked else Relation.ScaleModeGlobal)
 
@@ -240,6 +245,18 @@ class WekaVisualizer(QWidget):
             className = self.activeSwatch.dataClassLabel
             self._plotPalette[className] = color
             self.plot.setPlotPalette(self._plotPalette)
+
+    def saveImage(self):
+        fileName = QFileDialog.getSaveFileName(self, self.tr("Select save location"),
+                                               "", self.tr("Images (*.png *.jpg *.bmp *.xpm)"))
+        if "" != fileName[0] and os.path.isdir(os.path.dirname(fileName[0])):
+            imgSize = QSize(self.plot.scene().width() * 4, self.plot.scene().height() * 4)
+            img = QImage(imgSize, QImage.Format_ARGB32)
+            img.fill(Qt.transparent)
+            painter = QPainter(img)
+            self.plot.render(painter)
+            img.save(fileName[0], None, 100)
+            del painter
 
     def center(self):
         qr = self.frameGeometry()
