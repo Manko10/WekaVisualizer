@@ -255,7 +255,7 @@ class WekaVisualizer(QWidget):
             img.fill(Qt.transparent)
             painter = QPainter(img)
             self.plot.render(painter)
-            img.save(fileName[0], None, 100)
+            img.save(fileName[0])
             del painter
 
     def center(self):
