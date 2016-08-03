@@ -23,8 +23,8 @@
 import sys
 from traceback import print_exception
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QColor, QPalette, QFontMetrics, QImage, QPainter
-from PyQt5.QtCore import Qt, QSize, QPointF
+from PyQt5.QtGui import QColor, QPalette, QFontMetrics, QImage, QPainter, QDesktopServices
+from PyQt5.QtCore import Qt, QSize, QUrl
 import os.path
 import data
 from vis import StarPlot
@@ -257,6 +257,7 @@ class WekaVisualizer(QWidget):
             self.plot.render(painter)
             img.save(fileName[0])
             del painter
+            QDesktopServices.openUrl(QUrl("file:///" + fileName[0], QUrl.TolerantMode))
 
     def center(self):
         qr = self.frameGeometry()
